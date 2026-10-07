@@ -25,6 +25,7 @@ interface ScoreSheetHorizontalProps {
   cursor: CursorPosition;
   currentPlayKey: string | null;
   selectedRange: [number, number] | null;
+  selectedSlotKeys?: Set<string>;
   onSlotClick: (mIdx: number, bIdx: number, sIdx: number, low?: boolean, shiftKey?: boolean) => void;
   onMeasureClick: (mIdx: number) => void;
   onLyricsChange?: (mIdx: number, bIdx: number, text: string) => void;
@@ -42,6 +43,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
   cursor,
   currentPlayKey,
   selectedRange,
+  selectedSlotKeys,
   onSlotClick,
   onMeasureClick,
   onLyricsChange,
@@ -407,9 +409,11 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                             /* 4th note (♩) full cell */
                             <div
                               id={`slot-h-${mIdx}-${bIdx}-0`}
-                              onClick={e => onSlotClick(mIdx, bIdx, 0, false, e.shiftKey)}
+                              onClick={e => onSlotClick(mIdx, bIdx, 0, false, e.shiftKey || e.ctrlKey || e.metaKey)}
                               className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
-                                cursor.m === mIdx && cursor.b === bIdx && cursor.s === 0
+                                selectedSlotKeys?.has(`${mIdx}-${bIdx}-0`)
+                                  ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                  : cursor.m === mIdx && cursor.b === bIdx && cursor.s === 0
                                   ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
                                   : ''
                               } ${currentPlayKey === `${mIdx}-${bIdx}-0` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
@@ -419,20 +423,26 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                           ) : div === 2 ? (
                             /* 8th notes (♪♪) two horizontal cells */
                             <div className="flex flex-1 divide-x divide-stone-900">
-                              {beat.slots.map((sl, sIdx) => (
-                                <div
-                                  key={sIdx}
-                                  id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
-                                  onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey)}
-                                  className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
-                                    cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
-                                      ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
-                                      : ''
-                                  } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
-                                >
-                                  {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby)}
-                                </div>
-                              ))}
+                              {beat.slots.map((sl, sIdx) => {
+                                const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
+                                const isMultiSel = selectedSlotKeys?.has(slotKey);
+                                return (
+                                  <div
+                                    key={sIdx}
+                                    id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
+                                    onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey || e.ctrlKey || e.metaKey)}
+                                    className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                      isMultiSel
+                                        ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                        : cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
+                                        ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                        : ''
+                                    } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                                  >
+                                    {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby)}
+                                  </div>
+                                );
+                              })}
                             </div>
                           ) : div === 3 ? (
                             /* Triplets */
@@ -440,38 +450,50 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                               <span className="absolute left-0.5 bottom-0 text-[8px] italic font-sans text-stone-500 pointer-events-none">
                                 3
                               </span>
-                              {beat.slots.map((sl, sIdx) => (
-                                <div
-                                  key={sIdx}
-                                  id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
-                                  onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey)}
-                                  className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
-                                    cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
-                                      ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
-                                      : ''
-                                  } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
-                                >
-                                  {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby, true)}
-                                </div>
-                              ))}
+                              {beat.slots.map((sl, sIdx) => {
+                                const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
+                                const isMultiSel = selectedSlotKeys?.has(slotKey);
+                                return (
+                                  <div
+                                    key={sIdx}
+                                    id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
+                                    onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey || e.ctrlKey || e.metaKey)}
+                                    className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                      isMultiSel
+                                        ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                        : cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
+                                        ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                        : ''
+                                    } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                                  >
+                                    {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby, true)}
+                                  </div>
+                                );
+                              })}
                             </div>
                           ) : (
                             /* 16th notes */
                             <div className="flex flex-1 divide-x divide-stone-400">
-                              {beat.slots.map((sl, sIdx) => (
-                                <div
-                                  key={sIdx}
-                                  id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
-                                  onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey)}
-                                  className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
-                                    cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
-                                      ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
-                                      : ''
-                                  } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
-                                >
-                                  {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby, true)}
-                                </div>
-                              ))}
+                              {beat.slots.map((sl, sIdx) => {
+                                const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
+                                const isMultiSel = selectedSlotKeys?.has(slotKey);
+                                return (
+                                  <div
+                                    key={sIdx}
+                                    id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
+                                    onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey || e.ctrlKey || e.metaKey)}
+                                    className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                      isMultiSel
+                                        ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                        : cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
+                                        ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                        : ''
+                                    } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                                  >
+                                    {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby, true)}
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
 
@@ -542,30 +564,66 @@ function renderSlotContentH(
     if (sl[k]) rh += ORN_MARKS[k];
   });
 
-  const notesText = sl.notes
-    .map((n: number) => (isArabic ? String(n + 1) : KANJI_STRINGS[n]))
-    .join(isArabic ? '·' : '');
+  const fingerText = sl.finger ? String(sl.finger) : '';
+  const isChord = sl.notes.length > 1;
 
   return (
-    <>
-      {rh && (
-        <span className="absolute right-0.5 top-0.5 text-[9px] font-bold text-red-700 leading-none font-score">
-          {rh}
-        </span>
-      )}
-      <span
-        className={`font-score font-bold leading-none select-none ${
-          small ? 'text-xs' : sl.notes.length > 1 ? 'text-sm' : 'text-lg'
-        } ${isArabic ? 'font-sans font-bold' : ''}`}
-      >
-        {notesText}
-      </span>
-      {isRubyOn && renderRuby(sl.notes, sl.oshi, sl.ato)}
+    <div className="relative flex items-center justify-center w-full h-full px-0.5">
+      {/* Left-hand marks on the left */}
       {lh && (
-        <span className="absolute right-0.5 bottom-0.5 text-[9px] font-bold text-red-700 leading-none font-score">
+        <span
+          className="absolute left-0.5 top-1/2 -translate-y-1/2 text-[10px] sm:text-xs font-black text-red-700 leading-none font-score select-none tracking-tighter"
+          title="押手・左手技法"
+        >
           {lh}
         </span>
       )}
-    </>
+
+      {/* Right-hand ornament (top right) */}
+      {rh && (
+        <span className="absolute right-0.5 top-0.5 text-[9px] font-bold text-red-700 leading-none font-score select-none">
+          {rh}
+        </span>
+      )}
+
+      {/* Finger number */}
+      {fingerText && (
+        <span
+          className="absolute right-1 top-0.5 font-sans font-extrabold text-[9px] text-amber-950 bg-amber-200/90 rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none shadow-2xs select-none"
+          title={`指番号: ${fingerText === '3' ? '中指 (3)' : fingerText === '2' ? '人差指 (2)' : '親指 (1)'}`}
+        >
+          {fingerText}
+        </span>
+      )}
+
+      {/* Main notes (side by side for chords) */}
+      <div
+        className={`flex items-center justify-center gap-0.5 select-none font-score font-bold leading-none ${
+          lh ? 'pl-2' : ''
+        }`}
+      >
+        {sl.notes.map((n: number, idx: number) => {
+          const char = isArabic ? String(n + 1) : KANJI_STRINGS[n];
+          return (
+            <span
+              key={idx}
+              className={`leading-none ${
+                small
+                  ? isChord
+                    ? 'text-[10px]'
+                    : 'text-xs'
+                  : isChord
+                  ? 'text-xs sm:text-sm font-extrabold text-stone-900 border-b border-stone-400/40 pb-0.5'
+                  : 'text-base sm:text-lg'
+              } ${isArabic ? 'font-sans font-bold' : ''}`}
+            >
+              {char}
+            </span>
+          );
+        })}
+      </div>
+
+      {isRubyOn && renderRuby(sl.notes, sl.oshi, sl.ato)}
+    </div>
   );
 }

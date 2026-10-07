@@ -25,13 +25,31 @@
 }
 
 @media print {
-  body {
+  html, body {
     background-color: #ffffff !important;
     color: #000000 !important;
     padding: 0 !important;
+    margin: 0 !important;
+    font-size: 12pt;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   .no-print {
     display: none !important;
+  }
+  main {
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+  /* Prevent measure blocks and columns from breaking awkwardly */
+  .score-column {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 }
 

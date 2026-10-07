@@ -65,6 +65,7 @@ export default function App() {
   const [cursor, setCursor] = useState<CursorPosition>({ m: 0, b: 0, s: 0, low: false });
   const [selectedRange, setSelectedRange] = useState<[number, number] | null>(null);
   const [selAnchor, setSelAnchor] = useState<number | null>(null);
+  const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
   const [inputDiv, setInputDiv] = useState<1 | 2 | 3 | 4>(1);
   const [isChordMode, setIsChordMode] = useState(false);
   const [lastEnteredSlot, setLastEnteredSlot] = useState<{ m: number; b: number; s: number } | null>(null);
@@ -599,6 +600,49 @@ export default function App() {
 
   const handleInputClear = useCallback(() => {
     mutateScore(draft => {
+      // If multiple slots are selected (like Excel multi-select cells)
+      if (selectedSlotKeys.size > 0) {
+        selectedSlotKeys.forEach(k => {
+          const [mStr, bStr, sStr] = k.split('-');
+          const m = parseInt(mStr, 10);
+          const b = parseInt(bStr, 10);
+          const s = parseInt(sStr, 10);
+          const slot = draft.measures[m]?.beats[b]?.slots[s];
+          if (slot) {
+            slot.notes = [];
+            slot.rest = false;
+            slot.tie = false;
+            slot.oshi = 0;
+            slot.finger = undefined;
+            LEFT_HAND_ORNS.forEach(key => (slot[key] = false));
+            RIGHT_HAND_ORNS.forEach(key => (slot[key] = false));
+          }
+        });
+        setSelectedSlotKeys(new Set());
+        return;
+      }
+
+      // If a measure range is selected
+      if (selectedRange) {
+        for (let m = selectedRange[0]; m <= selectedRange[1]; m++) {
+          const meas = draft.measures[m];
+          if (meas) {
+            meas.beats.forEach(b => {
+              b.slots.forEach(slot => {
+                slot.notes = [];
+                slot.rest = false;
+                slot.tie = false;
+                slot.oshi = 0;
+                slot.finger = undefined;
+                LEFT_HAND_ORNS.forEach(key => (slot[key] = false));
+                RIGHT_HAND_ORNS.forEach(key => (slot[key] = false));
+              });
+            });
+          }
+        }
+        return;
+      }
+
       const beat = draft.measures[cursor.m]?.beats[cursor.b];
       if (!beat) return;
       const slot = beat.slots[cursor.s];
@@ -607,10 +651,31 @@ export default function App() {
       slot.rest = false;
       slot.tie = false;
       slot.oshi = 0;
+      slot.finger = undefined;
       LEFT_HAND_ORNS.forEach(k => (slot[k] = false));
       RIGHT_HAND_ORNS.forEach(k => (slot[k] = false));
     });
-  }, [cursor, mutateScore]);
+  }, [cursor, selectedSlotKeys, selectedRange, mutateScore]);
+
+  // Set finger (中指 3, 人差指 2, 親指 1)
+  const handleSetFinger = useCallback((fingerNum: number | undefined) => {
+    mutateScore(draft => {
+      if (selectedSlotKeys.size > 0) {
+        selectedSlotKeys.forEach(k => {
+          const [mStr, bStr, sStr] = k.split('-');
+          const m = parseInt(mStr, 10);
+          const b = parseInt(bStr, 10);
+          const s = parseInt(sStr, 10);
+          const slot = draft.measures[m]?.beats[b]?.slots[s];
+          if (slot) slot.finger = fingerNum;
+        });
+        return;
+      }
+      const targetPos = lastEnteredSlot || cursor;
+      const slot = draft.measures[targetPos.m]?.beats[targetPos.b]?.slots[targetPos.s];
+      if (slot) slot.finger = fingerNum;
+    });
+  }, [cursor, lastEnteredSlot, selectedSlotKeys, mutateScore]);
 
   // Toggle Ornament
   const handleToggleOrn = useCallback((ornKey: string) => {
@@ -705,14 +770,25 @@ export default function App() {
     });
   }, [cursor.m, mutateScore]);
 
-  // Click on Slot in Score
+  // Click on Slot in Score (Supports Excel-like multi-cell selection with Shift / Ctrl)
   const handleSlotClick = useCallback(
-    (mIdx: number, bIdx: number, sIdx: number, low?: boolean, shiftKey?: boolean) => {
-      if (shiftKey) {
-        const anchor = selAnchor == null ? cursor.m : selAnchor;
-        setSelAnchor(anchor);
-        setSelectedRange([Math.min(anchor, mIdx), Math.max(anchor, mIdx)]);
+    (mIdx: number, bIdx: number, sIdx: number, low?: boolean, modifierKey?: boolean) => {
+      const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
+
+      if (modifierKey) {
+        // Toggle or add to multi-cell selection set
+        setSelectedSlotKeys(prev => {
+          const next = new Set(prev);
+          if (next.has(slotKey)) {
+            next.delete(slotKey);
+          } else {
+            next.add(slotKey);
+          }
+          return next;
+        });
       } else {
+        // Single selection resets multi-select
+        setSelectedSlotKeys(new Set());
         setSelectedRange(null);
         setSelAnchor(null);
       }
@@ -725,7 +801,7 @@ export default function App() {
         previewSlot(sl);
       }
     },
-    [cursor.m, selAnchor, score, isPlaying, previewSlot]
+    [score, isPlaying, previewSlot]
   );
 
   const handleMeasureClick = useCallback(
@@ -778,6 +854,25 @@ export default function App() {
           handlePasteMeasure();
           return;
         }
+        if (e.key === 'a' || e.key === 'A') {
+          e.preventDefault();
+          // Select all slots across the score (Excel-like Ctrl+A)
+          const allKeys = new Set<string>();
+          score.measures.forEach((meas, m) => {
+            meas.beats.forEach((b, bIdx) => {
+              b.slots.forEach((_, sIdx) => {
+                allKeys.add(`${m}-${bIdx}-${sIdx}`);
+              });
+            });
+          });
+          setSelectedSlotKeys(allKeys);
+          return;
+        }
+        if (e.key === 'p' || e.key === 'P') {
+          e.preventDefault();
+          window.print();
+          return;
+        }
         if (e.key === 's') {
           e.preventDefault();
           setIsExportOpen(true);
@@ -801,6 +896,7 @@ export default function App() {
         if (isPlaying) {
           stopPlayback();
         } else {
+          setSelectedSlotKeys(new Set());
           setSelectedRange(null);
           setSelAnchor(null);
         }
@@ -1012,6 +1108,7 @@ export default function App() {
           onOpenExport={() => setIsExportOpen(true)}
           onOpenHelp={() => setIsHelpOpen(true)}
           onOpenPracticeMode={() => setIsPracticeMode(true)}
+          onPrint={() => window.print()}
         />
 
         {/* Measure Scrubber / Quick Navigation Bar with Fit-All Overview Switcher */}
@@ -1043,6 +1140,7 @@ export default function App() {
               cursor={cursor}
               currentPlayKey={currentPlayKey}
               selectedRange={selectedRange}
+              selectedSlotKeys={selectedSlotKeys}
               onSlotClick={handleSlotClick}
               onMeasureClick={handleMeasureClick}
               onLyricsChange={handleLyricsChange}
@@ -1063,6 +1161,7 @@ export default function App() {
               cursor={cursor}
               currentPlayKey={currentPlayKey}
               selectedRange={selectedRange}
+              selectedSlotKeys={selectedSlotKeys}
               onSlotClick={handleSlotClick}
               onMeasureClick={handleMeasureClick}
               onLyricsChange={handleLyricsChange}
@@ -1089,6 +1188,8 @@ export default function App() {
             inputDiv={inputDiv}
             isChordMode={isChordMode}
             selectedOrns={currentOrns}
+            currentFinger={targetSlot?.finger}
+            onSetFinger={handleSetFinger}
             canUndo={undoStackRef.current.length > 0}
             canRedo={redoStackRef.current.length > 0}
             loopActive={loopActive}

@@ -18,7 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
   Settings2,
-  Maximize2
+  Maximize2,
+  Printer
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -30,6 +31,7 @@ interface HeaderProps {
   onOpenExport: () => void;
   onOpenHelp: () => void;
   onOpenPracticeMode?: () => void;
+  onPrint?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -40,7 +42,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTuning,
   onOpenExport,
   onOpenHelp,
-  onOpenPracticeMode
+  onOpenPracticeMode,
+  onPrint
 }) => {
   const [showOptions, setShowOptions] = useState(false);
   const view = score.view;
@@ -106,11 +109,22 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenExport}
             className="flex items-center gap-1 rounded-md bg-indigo-700 px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-bold text-white shadow-2xs hover:bg-indigo-600 cursor-pointer shrink-0 whitespace-nowrap"
-            title="保存・WAV/MIDI書き出し・印刷"
+            title="保存・WAV/MIDI書き出し・詳細出力"
           >
             <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
             <span>保存</span>
           </button>
+
+          {onPrint && (
+            <button
+              onClick={onPrint}
+              className="flex items-center gap-1 rounded-md border border-stone-300 bg-white px-2 py-0.5 sm:py-1 text-xs font-bold text-stone-800 shadow-2xs hover:bg-stone-100 cursor-pointer shrink-0 whitespace-nowrap"
+              title="印刷画面・PDF保存プレビューを開く (Ctrl+P)"
+            >
+              <Printer className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-stone-700 shrink-0" />
+              <span>印刷</span>
+            </button>
+          )}
 
           {/* Settings / View options expand toggle */}
           <button

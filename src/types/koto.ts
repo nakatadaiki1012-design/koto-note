@@ -121,6 +121,7 @@ export interface Slot {
   hiki?: boolean;
   trem?: boolean;
   nagashi?: boolean;
+  finger?: number; // 1=親指, 2=人差し指, 3=中指(3)
 }
 
 export interface Beat {
@@ -310,7 +311,8 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
             kaki: !!sl.kaki,
             hiki: !!sl.hiki,
             trem: !!sl.trem,
-            nagashi: !!sl.nagashi
+            nagashi: !!sl.nagashi,
+            finger: typeof sl.finger === 'number' && [1, 2, 3].includes(sl.finger) ? sl.finger : undefined
           });
         } else {
           slots.push(createNewSlot());

@@ -78,6 +78,8 @@ interface DockProps {
   onSetMetronome: (active: boolean) => void;
   onTempoChange: (tempo: number) => void;
   onToggleKotoBoard?: () => void;
+  currentFinger?: number;
+  onSetFinger?: (finger: number | undefined) => void;
 }
 
 export const Dock: React.FC<DockProps> = ({
@@ -95,6 +97,8 @@ export const Dock: React.FC<DockProps> = ({
   volume,
   countIn,
   metronome,
+  currentFinger,
+  onSetFinger,
   onPlayToggle,
   onStop,
   onRewind,
@@ -504,6 +508,43 @@ export const Dock: React.FC<DockProps> = ({
                   );
                 })}
               </div>
+
+              {/* Finger designation (中指 3, 人差指 2, 親指 1) */}
+              {onSetFinger && (
+                <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-stone-200">
+                  <span className="text-xs font-bold text-amber-900 mr-1 shrink-0">指番号（右手爪）:</span>
+                  {[
+                    { num: 3, label: '中指「３」', desc: '中指（爪）で弾く' },
+                    { num: 2, label: '人差指「２」', desc: '人差し指で弾く' },
+                    { num: 1, label: '親指「１」', desc: '親指で弾く' }
+                  ].map(f => {
+                    const isSelected = currentFinger === f.num;
+                    return (
+                      <button
+                        key={f.num}
+                        onClick={() => onSetFinger(isSelected ? undefined : f.num)}
+                        className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500 text-stone-950 shadow-2xs ring-1 ring-amber-600'
+                            : 'border border-amber-300 bg-amber-50/80 text-amber-950 hover:bg-amber-100'
+                        }`}
+                        title={f.desc}
+                      >
+                        <span className="font-sans font-extrabold">{f.num}</span>
+                        <span>{f.label}</span>
+                      </button>
+                    );
+                  })}
+                  {currentFinger && (
+                    <button
+                      onClick={() => onSetFinger(undefined)}
+                      className="text-[10px] text-stone-400 hover:text-stone-700 underline px-1 cursor-pointer"
+                    >
+                      解除
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
