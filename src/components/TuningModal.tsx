@@ -141,15 +141,18 @@ export const TuningModal: React.FC<TuningModalProps> = ({
                 className="w-full rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-800 disabled:opacity-50"
               >
                 {[
-                  { m: 58, label: 'B♭3（黄鐘）' },
-                  { m: 59, label: 'B3（鸞鏡）' },
-                  { m: 60, label: 'C4（神仙）' },
-                  { m: 61, label: 'C♯4 / D♭4（上無）' },
-                  { m: 62, label: 'D4（壱越 - 標準）' },
-                  { m: 63, label: 'E♭4（断金）' },
-                  { m: 64, label: 'E4（平調）' },
-                  { m: 65, label: 'F4（勝絶）' },
-                  { m: 67, label: 'G4（双調）' }
+                  { m: 58, label: 'B♭3（黄鐘）/ 9本(低)' },
+                  { m: 59, label: 'B3（鸞鏡）/ 10本(低)' },
+                  { m: 60, label: 'C4（神仙）/ 11本(低)' },
+                  { m: 61, label: 'C♯4 / D♭4（上無）/ 12本(低)' },
+                  { m: 62, label: 'D4（壱越 - 標準）/ 1本' },
+                  { m: 63, label: 'E♭4（断金）/ 2本' },
+                  { m: 64, label: 'E4（平調）/ 3本' },
+                  { m: 65, label: 'F4（勝絶）/ 4本' },
+                  { m: 66, label: 'F♯4（下無）/ 5本' },
+                  { m: 67, label: 'G4（双調）/ 6本' },
+                  { m: 68, label: 'A♭4（鳧鐘）/ 7本' },
+                  { m: 69, label: 'A4（黄鐘）/ 8本' }
                 ].map(opt => (
                   <option key={opt.m} value={opt.m}>
                     {opt.label}

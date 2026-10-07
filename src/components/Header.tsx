@@ -17,7 +17,8 @@ import {
   Type,
   ChevronDown,
   ChevronUp,
-  Settings2
+  Settings2,
+  Maximize2
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -28,6 +29,7 @@ interface HeaderProps {
   onOpenTuning: () => void;
   onOpenExport: () => void;
   onOpenHelp: () => void;
+  onOpenPracticeMode?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -37,7 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLibrary,
   onOpenTuning,
   onOpenExport,
-  onOpenHelp
+  onOpenHelp,
+  onOpenPracticeMode
 }) => {
   const [showOptions, setShowOptions] = useState(false);
   const view = score.view;
@@ -90,6 +93,17 @@ export const Header: React.FC<HeaderProps> = ({
             <Sliders className="h-3.5 w-3.5 text-amber-700" />
             <span className="hidden sm:inline">調弦</span>
           </button>
+
+          {onOpenPracticeMode && (
+            <button
+              onClick={onOpenPracticeMode}
+              className="flex items-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 px-2.5 sm:px-3 py-1 text-xs font-bold shadow-xs transition-colors cursor-pointer"
+              title="演奏・練習モード（全画面で譜面を大きく集中表示）"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+              <span>演奏モード</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenExport}

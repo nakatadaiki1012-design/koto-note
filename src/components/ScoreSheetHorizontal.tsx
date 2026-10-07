@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   KotoScore,
   CursorPosition,
@@ -18,6 +18,7 @@ import {
   getTuningLabel,
   noteName
 } from '../types/koto';
+import { Plus, Play, Repeat, Trash2, Copy, Edit2, Check, X, MoreVertical } from 'lucide-react';
 
 interface ScoreSheetHorizontalProps {
   score: KotoScore;
@@ -27,6 +28,12 @@ interface ScoreSheetHorizontalProps {
   onSlotClick: (mIdx: number, bIdx: number, sIdx: number, low?: boolean, shiftKey?: boolean) => void;
   onMeasureClick: (mIdx: number) => void;
   onLyricsChange?: (mIdx: number, bIdx: number, text: string) => void;
+  onUpdateScoreMeta?: (meta: Partial<KotoScore>) => void;
+  onInsertMeasure?: (mIdx: number) => void;
+  onDuplicateMeasure?: (mIdx: number) => void;
+  onDeleteMeasure?: (mIdx: number) => void;
+  onAddMeasure?: () => void;
+  onSetLoop?: (active: boolean, a?: number, b?: number) => void;
   autoScroll?: boolean;
 }
 
@@ -38,12 +45,42 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
   onSlotClick,
   onMeasureClick,
   onLyricsChange,
+  onUpdateScoreMeta,
+  onInsertMeasure,
+  onDuplicateMeasure,
+  onDeleteMeasure,
+  onAddMeasure,
+  onSetLoop,
   autoScroll = true
 }) => {
   const pitches = getPitches(score);
   const perLine = score.view.perLine || 4;
   const isArabic = score.view.numerals === 'arabic';
   const isRubyOn = score.view.ruby !== 'off';
+
+  // Inline meta editing state
+  const [editingField, setEditingField] = useState<'title' | 'subtitle' | 'composer' | 'tempo' | null>(null);
+  const [editVal, setEditVal] = useState('');
+  const [activeMenuMeasure, setActiveMenuMeasure] = useState<number | null>(null);
+
+  const startEdit = (field: 'title' | 'subtitle' | 'composer' | 'tempo', current: string | number) => {
+    if (!onUpdateScoreMeta) return;
+    setEditingField(field);
+    setEditVal(String(current));
+  };
+
+  const saveEdit = () => {
+    if (!onUpdateScoreMeta || !editingField) return;
+    if (editingField === 'tempo') {
+      const num = parseInt(editVal, 10);
+      if (!isNaN(num) && num >= 30 && num <= 240) {
+        onUpdateScoreMeta({ tempo: num });
+      }
+    } else {
+      onUpdateScoreMeta({ [editingField]: editVal });
+    }
+    setEditingField(null);
+  };
 
   // Group measures into rows
   const rows: { measures: number[] }[] = [];
@@ -89,19 +126,120 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
     >
       {/* Header: Title, Subtitle, Composer */}
       <div className="flex flex-col items-center border-b border-stone-300 pb-4 text-center">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-widest text-stone-950 font-score">
-          {score.title || '無題'}
-        </h1>
-        {score.subtitle && (
-          <h2 className="text-sm font-semibold text-stone-600 mt-1 font-score tracking-wider">
-            {score.subtitle}
+        {editingField === 'title' ? (
+          <div className="flex items-center gap-1.5 z-30 bg-white p-2 rounded-lg shadow-lg border border-stone-300">
+            <input
+              type="text"
+              value={editVal}
+              onChange={e => setEditVal(e.target.value)}
+              onBlur={saveEdit}
+              onKeyDown={e => e.key === 'Enter' && saveEdit()}
+              className="text-xl sm:text-2xl font-extrabold text-center border rounded p-1 font-score w-64"
+              autoFocus
+              placeholder="曲名を入力"
+            />
+            <button onClick={saveEdit} className="px-2.5 py-1 text-xs bg-indigo-600 text-white rounded font-bold cursor-pointer">
+              保存
+            </button>
+            <button onClick={() => setEditingField(null)} className="px-1.5 text-xs text-stone-500 cursor-pointer">
+              取消
+            </button>
+          </div>
+        ) : (
+          <h1
+            onClick={() => startEdit('title', score.title)}
+            className="group relative text-2xl sm:text-3xl font-extrabold tracking-widest text-stone-950 font-score cursor-pointer hover:text-indigo-900 transition-colors flex items-center gap-2 justify-center"
+            title="クリックして曲名を編集"
+          >
+            <span>{score.title || '無題'}</span>
+            <Edit2 className="h-3.5 w-3.5 text-stone-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </h1>
+        )}
+
+        {editingField === 'subtitle' ? (
+          <div className="flex items-center gap-1.5 z-30 bg-white p-1.5 rounded-lg shadow border border-stone-300 mt-1">
+            <input
+              type="text"
+              value={editVal}
+              onChange={e => setEditVal(e.target.value)}
+              onBlur={saveEdit}
+              onKeyDown={e => e.key === 'Enter' && saveEdit()}
+              className="text-sm font-semibold text-center border rounded p-1 w-48 font-score"
+              autoFocus
+              placeholder="副題を入力"
+            />
+            <button onClick={saveEdit} className="px-2 py-0.5 text-xs bg-indigo-600 text-white rounded font-bold cursor-pointer">
+              保存
+            </button>
+          </div>
+        ) : (
+          <h2
+            onClick={() => startEdit('subtitle', score.subtitle || '')}
+            className="group text-sm font-semibold text-stone-600 mt-1 font-score tracking-wider cursor-pointer hover:text-indigo-900"
+            title="クリックして副題を編集"
+          >
+            {score.subtitle || <span className="opacity-0 group-hover:opacity-60 text-xs">+副題を追加</span>}
           </h2>
         )}
+
         <div className="mt-2 flex flex-wrap items-center justify-between w-full text-xs font-sans text-stone-600 px-2">
-          <span>{score.composer && `作曲 / 編曲: ${score.composer}`}</span>
+          {editingField === 'composer' ? (
+            <div className="flex items-center gap-1 z-30 bg-white p-1 rounded shadow border border-stone-300">
+              <input
+                type="text"
+                value={editVal}
+                onChange={e => setEditVal(e.target.value)}
+                onBlur={saveEdit}
+                onKeyDown={e => e.key === 'Enter' && saveEdit()}
+                className="text-xs border rounded p-0.5 w-36"
+                autoFocus
+                placeholder="作曲 / 編曲者"
+              />
+              <button onClick={saveEdit} className="px-1.5 py-0.5 text-xs bg-indigo-600 text-white rounded cursor-pointer">
+                保存
+              </button>
+            </div>
+          ) : (
+            <span
+              onClick={() => startEdit('composer', score.composer || '')}
+              className="group cursor-pointer hover:text-indigo-900"
+              title="クリックして作曲・編曲者を編集"
+            >
+              {score.composer ? `作曲 / 編曲: ${score.composer}` : <span className="opacity-0 group-hover:opacity-60">+作曲者</span>}
+            </span>
+          )}
+
           <div className="flex items-center gap-4">
             <span className="font-semibold text-stone-800">{score.beatsPerMeasure}/4 拍子</span>
-            <span>♩={score.tempo}</span>
+
+            {editingField === 'tempo' ? (
+              <div className="flex items-center gap-1 z-30 bg-white p-0.5 rounded shadow border border-stone-300">
+                <span className="text-[10px]">♩=</span>
+                <input
+                  type="number"
+                  min="30"
+                  max="240"
+                  value={editVal}
+                  onChange={e => setEditVal(e.target.value)}
+                  onBlur={saveEdit}
+                  onKeyDown={e => e.key === 'Enter' && saveEdit()}
+                  className="w-12 text-center text-xs border rounded px-1"
+                  autoFocus
+                />
+                <button onClick={saveEdit} className="p-0.5 text-green-700 cursor-pointer">
+                  <Check className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <span
+                onClick={() => startEdit('tempo', score.tempo)}
+                className="cursor-pointer hover:text-indigo-600 hover:underline"
+                title="クリックしてテンポを変更"
+              >
+                ♩={score.tempo}
+              </span>
+            )}
+
             <span>{getTuningLabel(score)}</span>
           </div>
         </div>
@@ -142,6 +280,8 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                     key={mIdx}
                     id={`measure-h-${mIdx}`}
                     className={`relative flex border-l-[2.5px] first:border-l-0 border-stone-900 transition-colors ${
+                      mIdx === score.measures.length - 1 ? 'border-r-4 border-double border-stone-950' : ''
+                    } ${
                       isSelectedMeasure
                         ? 'bg-amber-100/60 ring-2 ring-indigo-500/50'
                         : isCurrentCursorMeasure
@@ -149,14 +289,108 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                         : ''
                     }`}
                   >
-                    {/* Measure Number Clickable */}
-                    <button
-                      onClick={() => onMeasureClick(mIdx)}
-                      title={`第${mIdx + 1}小節から再生`}
-                      className="absolute left-1 -top-3.5 z-10 font-sans text-[10px] font-bold text-stone-500 hover:text-red-700 hover:underline px-0.5 cursor-pointer"
-                    >
-                      {mIdx + 1}
-                    </button>
+                    {/* Measure Number Clickable & Actions */}
+                    <div className="absolute left-1 -top-4 z-20 flex items-center gap-0.5">
+                      <button
+                        onClick={() => onMeasureClick(mIdx)}
+                        title={`第${mIdx + 1}小節から再生 (右アイコンで小節操作)`}
+                        className="font-sans text-[10px] font-bold text-stone-500 hover:text-red-700 hover:underline px-0.5 cursor-pointer"
+                      >
+                        {mIdx + 1}
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setActiveMenuMeasure(activeMenuMeasure === mIdx ? null : mIdx);
+                        }}
+                        className="text-stone-300 hover:text-stone-700 p-0.5 cursor-pointer no-print opacity-60 hover:opacity-100"
+                        title="小節メニュー（挿入・複製・削除・ループ）"
+                      >
+                        <MoreVertical className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+
+                    {/* Measure Actions Popover */}
+                    {activeMenuMeasure === mIdx && (
+                      <div
+                        onClick={e => e.stopPropagation()}
+                        className="absolute left-6 -top-2 z-40 flex flex-col gap-1 rounded-lg bg-white p-1.5 shadow-xl border border-stone-300 text-xs min-w-[145px] text-stone-700 no-print"
+                      >
+                        <div className="flex items-center justify-between border-b pb-1 font-bold text-stone-800 text-[11px]">
+                          <span>第{mIdx + 1}小節の操作</span>
+                          <button
+                            onClick={() => setActiveMenuMeasure(null)}
+                            className="text-stone-400 hover:text-stone-700 cursor-pointer"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => {
+                            onMeasureClick(mIdx);
+                            setActiveMenuMeasure(null);
+                          }}
+                          className="flex items-center gap-1.5 px-2 py-1 hover:bg-stone-100 rounded text-left cursor-pointer"
+                        >
+                          <Play className="h-3 w-3 text-indigo-600 fill-current" /> ここから再生
+                        </button>
+                        {onSetLoop && (
+                          <>
+                            <button
+                              onClick={() => {
+                                onSetLoop(true, mIdx + 1, score.measures.length);
+                                setActiveMenuMeasure(null);
+                              }}
+                              className="flex items-center gap-1.5 px-2 py-1 hover:bg-stone-100 rounded text-left cursor-pointer"
+                            >
+                              <Repeat className="h-3 w-3 text-amber-600" /> ループ開始(A)に設定
+                            </button>
+                            <button
+                              onClick={() => {
+                                onSetLoop(true, 1, mIdx + 1);
+                                setActiveMenuMeasure(null);
+                              }}
+                              className="flex items-center gap-1.5 px-2 py-1 hover:bg-stone-100 rounded text-left cursor-pointer"
+                            >
+                              <Repeat className="h-3 w-3 text-amber-600" /> ループ終了(B)に設定
+                            </button>
+                          </>
+                        )}
+                        {onInsertMeasure && (
+                          <button
+                            onClick={() => {
+                              onInsertMeasure(mIdx);
+                              setActiveMenuMeasure(null);
+                            }}
+                            className="flex items-center gap-1.5 px-2 py-1 hover:bg-stone-100 rounded text-left cursor-pointer border-t"
+                          >
+                            <Plus className="h-3 w-3 text-emerald-600" /> 前に小節を挿入
+                          </button>
+                        )}
+                        {onDuplicateMeasure && (
+                          <button
+                            onClick={() => {
+                              onDuplicateMeasure(mIdx);
+                              setActiveMenuMeasure(null);
+                            }}
+                            className="flex items-center gap-1.5 px-2 py-1 hover:bg-stone-100 rounded text-left cursor-pointer"
+                          >
+                            <Copy className="h-3 w-3 text-blue-600" /> この小節を複製
+                          </button>
+                        )}
+                        {onDeleteMeasure && score.measures.length > 1 && (
+                          <button
+                            onClick={() => {
+                              onDeleteMeasure(mIdx);
+                              setActiveMenuMeasure(null);
+                            }}
+                            className="flex items-center gap-1.5 px-2 py-1 hover:bg-red-50 text-red-600 rounded text-left cursor-pointer"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" /> この小節を削除
+                          </button>
+                        )}
+                      </div>
+                    )}
 
                     {/* Beats in Measure */}
                     {measure.beats.map((beat, bIdx) => {
@@ -260,6 +494,18 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
             </div>
           </div>
         ))}
+
+        {onAddMeasure && (
+          <div className="flex justify-center pt-2 no-print">
+            <button
+              onClick={onAddMeasure}
+              className="flex items-center gap-1.5 rounded-lg border border-dashed border-stone-300 px-4 py-2 text-xs font-semibold text-stone-500 hover:border-amber-600 hover:bg-amber-50/50 hover:text-amber-800 transition-colors cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>小節を追加する</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

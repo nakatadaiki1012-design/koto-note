@@ -34,6 +34,7 @@ import { TuningModal } from './components/TuningModal';
 import { ScoreLibraryModal } from './components/ScoreLibraryModal';
 import { ExportModal } from './components/ExportModal';
 import { HelpModal } from './components/HelpModal';
+import { PracticeModeOverlay } from './components/PracticeModeOverlay';
 
 const DRAFT_STORAGE_KEY = 'kotoBunkafu.draft.v1';
 
@@ -83,6 +84,7 @@ export default function App() {
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isPracticeMode, setIsPracticeMode] = useState(false);
 
   // Clipboard for measures
   const clipboardRef = useRef<any[] | null>(null);
@@ -643,6 +645,32 @@ export default function App() {
     });
   }, [cursor.m, mutateScore]);
 
+  const handleInsertMeasureAt = useCallback((mIdx: number) => {
+    mutateScore(draft => {
+      draft.measures.splice(mIdx, 0, createNewMeasure(draft.beatsPerMeasure));
+    });
+  }, [mutateScore]);
+
+  const handleDuplicateMeasure = useCallback((mIdx: number) => {
+    mutateScore(draft => {
+      const target = draft.measures[mIdx];
+      if (target) {
+        draft.measures.splice(mIdx + 1, 0, JSON.parse(JSON.stringify(target)));
+      }
+    });
+  }, [mutateScore]);
+
+  const handleDeleteMeasureAt = useCallback((mIdx: number) => {
+    mutateScore(draft => {
+      if (draft.measures.length <= 1) {
+        draft.measures = [createNewMeasure(draft.beatsPerMeasure)];
+      } else {
+        draft.measures.splice(mIdx, 1);
+        setCursor(prev => ({ ...prev, m: Math.min(prev.m, draft.measures.length - 1) }));
+      }
+    });
+  }, [mutateScore]);
+
   const handleDeleteMeasure = useCallback(() => {
     mutateScore(draft => {
       if (selectedRange) {
@@ -983,6 +1011,7 @@ export default function App() {
           onOpenTuning={() => setIsTuningOpen(true)}
           onOpenExport={() => setIsExportOpen(true)}
           onOpenHelp={() => setIsHelpOpen(true)}
+          onOpenPracticeMode={() => setIsPracticeMode(true)}
         />
 
         {/* Measure Scrubber / Quick Navigation Bar with Fit-All Overview Switcher */}
@@ -1017,6 +1046,15 @@ export default function App() {
               onSlotClick={handleSlotClick}
               onMeasureClick={handleMeasureClick}
               onLyricsChange={handleLyricsChange}
+              onUpdateScoreMeta={meta => mutateScore(d => Object.assign(d, meta))}
+              onInsertMeasure={handleInsertMeasureAt}
+              onDuplicateMeasure={handleDuplicateMeasure}
+              onDeleteMeasure={handleDeleteMeasureAt}
+              onAddMeasure={handleAddMeasure}
+              onSetLoop={(active, a, b) => {
+                setLoopActive(active);
+                if (a != null && b != null) setLoopRange([a, b]);
+              }}
               autoScroll={true}
             />
           ) : (
@@ -1028,6 +1066,15 @@ export default function App() {
               onSlotClick={handleSlotClick}
               onMeasureClick={handleMeasureClick}
               onLyricsChange={handleLyricsChange}
+              onUpdateScoreMeta={meta => mutateScore(d => Object.assign(d, meta))}
+              onInsertMeasure={handleInsertMeasureAt}
+              onDuplicateMeasure={handleDuplicateMeasure}
+              onDeleteMeasure={handleDeleteMeasureAt}
+              onAddMeasure={handleAddMeasure}
+              onSetLoop={(active, a, b) => {
+                setLoopActive(active);
+                if (a != null && b != null) setLoopRange([a, b]);
+              }}
               autoScroll={true}
             />
           )}
@@ -1132,6 +1179,37 @@ export default function App() {
       />
 
       <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+
+      {/* Zen Performance & Practice Mode Overlay */}
+      {isPracticeMode && (
+        <PracticeModeOverlay
+          score={score}
+          cursor={cursor}
+          currentPlayKey={currentPlayKey}
+          isPlaying={isPlaying}
+          speed={speed}
+          metronome={metronome}
+          loopActive={loopActive}
+          loopRange={loopRange}
+          onPlayToggle={togglePlay}
+          onStop={stopPlayback}
+          onRewind={() => {
+            stopPlayback();
+            setCursor({ m: 0, b: 0, s: 0 });
+          }}
+          onSetSpeed={setSpeed}
+          onSetTempo={bpm => mutateScore(d => (d.tempo = bpm))}
+          onSetMetronome={setMetronome}
+          onSetLoop={(active, a, b) => {
+            setLoopActive(active);
+            if (a != null && b != null) setLoopRange([a, b]);
+          }}
+          onSelectMeasure={mIdx => setCursor({ m: mIdx, b: 0, s: 0, low: false })}
+          onSlotClick={handleSlotClick}
+          onClose={() => setIsPracticeMode(false)}
+          onUpdateScoreMeta={meta => mutateScore(d => Object.assign(d, meta))}
+        />
+      )}
     </div>
   );
 }
