@@ -51,90 +51,88 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="flex flex-col gap-2 rounded-2xl border border-stone-200/90 bg-white/95 p-2.5 sm:p-3 shadow-xs backdrop-blur-md no-print transition-all">
+    <header className="flex flex-col gap-1.5 rounded-xl border border-stone-200/90 bg-white/95 px-2.5 sm:px-3 py-1 sm:py-1.5 shadow-2xs backdrop-blur-md no-print transition-all">
       {/* Top row: Brand & Primary Modals */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-800 to-amber-950 text-white shadow-md">
-            <span className="font-score font-extrabold text-base sm:text-lg">箏</span>
+        <div className="flex items-center gap-1.5">
+          <div className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-800 to-amber-950 text-white shadow-xs">
+            <span className="font-score font-extrabold text-xs sm:text-sm">箏</span>
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="text"
-                value={score.title}
-                onChange={e => onUpdateScoreMeta({ title: e.target.value })}
-                placeholder="曲名を入力"
-                className="font-score font-extrabold text-sm sm:text-base text-stone-900 border-b border-transparent hover:border-stone-300 focus:border-indigo-500 focus:outline-none bg-transparent max-w-[130px] sm:max-w-[220px]"
-              />
-              <span className="rounded bg-amber-100 px-1 py-0.5 text-[9px] font-bold text-amber-900 shrink-0">
-                {score.tuning.preset === 'custom' ? 'カスタム' : score.tuning.preset}
-              </span>
-            </div>
+          <div className="flex items-center gap-1">
+            <input
+              type="text"
+              value={score.title}
+              onChange={e => onUpdateScoreMeta({ title: e.target.value })}
+              placeholder="曲名を入力"
+              className="font-score font-extrabold text-xs sm:text-sm text-stone-900 border-b border-transparent hover:border-stone-300 focus:border-indigo-500 focus:outline-none bg-transparent max-w-[110px] sm:max-w-[200px] py-0.5"
+            />
+            <span className="rounded bg-amber-100/80 px-1 py-0.2 font-mono text-[9px] font-bold text-amber-900 shrink-0">
+              {score.tuning.preset === 'custom' ? 'カスタム' : score.tuning.preset}
+            </span>
           </div>
         </div>
 
         {/* Modal & Options Buttons */}
-        <div className="flex items-center gap-1 sm:gap-1.5">
+        <div className="flex items-center gap-1">
           <button
             onClick={onOpenLibrary}
-            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2 sm:px-2.5 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer"
+            className="flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 sm:py-1 text-xs font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer"
             title="楽曲ライブラリ"
           >
-            <FolderOpen className="h-3.5 w-3.5 text-amber-700" />
+            <FolderOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-700" />
             <span className="hidden sm:inline">楽曲集</span>
           </button>
 
           <button
             onClick={onOpenTuning}
-            className="flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50/80 px-2 sm:px-2.5 py-1 text-xs font-semibold text-amber-950 hover:bg-amber-100 cursor-pointer"
+            className="flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50/80 px-2 py-0.5 sm:py-1 text-xs font-semibold text-amber-950 hover:bg-amber-100 cursor-pointer"
             title="調弦設定"
           >
-            <Sliders className="h-3.5 w-3.5 text-amber-700" />
+            <Sliders className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-700" />
             <span className="hidden sm:inline">調弦</span>
           </button>
 
           {onOpenPracticeMode && (
             <button
               onClick={onOpenPracticeMode}
-              className="flex items-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 px-2.5 sm:px-3 py-1 text-xs font-bold shadow-xs transition-colors cursor-pointer"
+              className="flex items-center gap-1 rounded-md bg-amber-500 hover:bg-amber-400 text-stone-950 px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
               title="演奏・練習モード（全画面で譜面を大きく集中表示）"
             >
-              <Maximize2 className="h-3.5 w-3.5" />
+              <Maximize2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               <span>演奏モード</span>
             </button>
           )}
 
           <button
             onClick={onOpenExport}
-            className="flex items-center gap-1 rounded-lg bg-indigo-700 px-2.5 sm:px-3 py-1 text-xs font-bold text-white shadow-xs hover:bg-indigo-600 cursor-pointer"
+            className="flex items-center gap-1 rounded-md bg-indigo-700 px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-bold text-white shadow-2xs hover:bg-indigo-600 cursor-pointer"
             title="保存・WAV/MIDI書き出し・印刷"
           >
-            <Download className="h-3.5 w-3.5" />
+            <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             <span>保存/出力</span>
           </button>
 
           {/* Settings / View options expand toggle */}
           <button
             onClick={() => setShowOptions(!showOptions)}
-            className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+            className={`flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 sm:py-1 text-xs font-semibold transition-colors cursor-pointer ${
               showOptions
                 ? 'border-indigo-400 bg-indigo-50 text-indigo-900'
                 : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
             }`}
             title="表示設定・詳細切り替え"
           >
-            <Settings2 className="h-3.5 w-3.5" />
+            <Settings2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             <span className="hidden md:inline">設定</span>
-            {showOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showOptions ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />}
           </button>
 
           <button
             onClick={onOpenHelp}
-            className="flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1 text-stone-600 hover:bg-stone-100 cursor-pointer"
+            className="flex items-center justify-center rounded-md border border-stone-200 bg-white p-1 text-stone-600 hover:bg-stone-100 cursor-pointer"
             title="ヘルプ"
           >
-            <HelpCircle className="h-3.5 w-3.5" />
+            <HelpCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           </button>
         </div>
       </div>
