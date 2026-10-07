@@ -73,66 +73,66 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Modal & Options Buttons */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={onOpenLibrary}
-            className="flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 sm:py-1 text-xs font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer"
+            className="flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 sm:py-1 text-xs font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer shrink-0 whitespace-nowrap"
             title="楽曲ライブラリ"
           >
-            <FolderOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-700" />
+            <FolderOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-700 shrink-0" />
             <span className="hidden sm:inline">楽曲集</span>
           </button>
 
           <button
             onClick={onOpenTuning}
-            className="flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50/80 px-2 py-0.5 sm:py-1 text-xs font-semibold text-amber-950 hover:bg-amber-100 cursor-pointer"
+            className="flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50/80 px-2 py-0.5 sm:py-1 text-xs font-semibold text-amber-950 hover:bg-amber-100 cursor-pointer shrink-0 whitespace-nowrap"
             title="調弦設定"
           >
-            <Sliders className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-700" />
+            <Sliders className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-700 shrink-0" />
             <span className="hidden sm:inline">調弦</span>
           </button>
 
           {onOpenPracticeMode && (
             <button
               onClick={onOpenPracticeMode}
-              className="flex items-center gap-1 rounded-md bg-amber-500 hover:bg-amber-400 text-stone-950 px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+              className="flex items-center gap-1 rounded-md bg-amber-500 hover:bg-amber-400 text-stone-950 px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0 whitespace-nowrap"
               title="演奏・練習モード（全画面で譜面を大きく集中表示）"
             >
-              <Maximize2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              <span>演奏モード</span>
+              <Maximize2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+              <span>演奏</span>
             </button>
           )}
 
           <button
             onClick={onOpenExport}
-            className="flex items-center gap-1 rounded-md bg-indigo-700 px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-bold text-white shadow-2xs hover:bg-indigo-600 cursor-pointer"
+            className="flex items-center gap-1 rounded-md bg-indigo-700 px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-bold text-white shadow-2xs hover:bg-indigo-600 cursor-pointer shrink-0 whitespace-nowrap"
             title="保存・WAV/MIDI書き出し・印刷"
           >
-            <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            <span>保存/出力</span>
+            <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+            <span>保存</span>
           </button>
 
           {/* Settings / View options expand toggle */}
           <button
             onClick={() => setShowOptions(!showOptions)}
-            className={`flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 sm:py-1 text-xs font-semibold transition-colors cursor-pointer ${
+            className={`flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 sm:py-1 text-xs font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
               showOptions
                 ? 'border-indigo-400 bg-indigo-50 text-indigo-900'
                 : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
             }`}
             title="表示設定・詳細切り替え"
           >
-            <Settings2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <Settings2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
             <span className="hidden md:inline">設定</span>
-            {showOptions ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />}
+            {showOptions ? <ChevronUp className="h-2.5 w-2.5 shrink-0" /> : <ChevronDown className="h-2.5 w-2.5 shrink-0" />}
           </button>
 
           <button
             onClick={onOpenHelp}
-            className="flex items-center justify-center rounded-md border border-stone-200 bg-white p-1 text-stone-600 hover:bg-stone-100 cursor-pointer"
+            className="flex items-center justify-center rounded-md border border-stone-200 bg-white p-1 text-stone-600 hover:bg-stone-100 cursor-pointer shrink-0"
             title="ヘルプ"
           >
-            <HelpCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <HelpCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
           </button>
         </div>
       </div>
