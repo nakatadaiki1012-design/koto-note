@@ -1,0 +1,6 @@
+{
+  "name": "箏 文化譜エディタ (Koto Note)",
+  "description": "十三絃箏の文化譜（数字譜）をブラウザで作成・再生・編集・印刷・WAV/MIDI書き出しできる本格エディタ",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
