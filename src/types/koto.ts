@@ -205,7 +205,7 @@ export function getDefaultView(): ViewSettings {
     chart: 'on',
     perLine: 4,
     showLyrics: false,
-    showKotoBoard: true,
+    showKotoBoard: false,
     zoom: 1
   };
 }

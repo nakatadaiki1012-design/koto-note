@@ -1000,24 +1000,13 @@ export default function App() {
           onSetZoom100={handleSetZoom100}
         />
 
-        {/* Virtual 13-String Koto Instrument (if enabled) */}
-        {score.view.showKotoBoard && (
-          <div className="no-print">
-            <VirtualKoto
-              score={score}
-              onSelectString={inputString}
-              activeStrings={curSlot?.notes || []}
-            />
-          </div>
-        )}
-
         {/* Main Bunkafu Score Paper Sheet (Continuous horizontal flow, never awkwardly wrapped) */}
         <main
           ref={scoreContainerRef}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="w-full rounded-2xl border border-stone-300 bg-[#fdfcf8] p-3 sm:p-6 shadow-md overflow-x-auto overflow-y-auto max-h-[66vh] print:max-h-none print:border-none print:shadow-none print:p-0 print:bg-white touch-pan-x touch-pan-y"
+          className="w-full rounded-2xl border border-stone-300 bg-[#fdfcf8] p-3 sm:p-6 shadow-md overflow-x-auto overflow-y-auto max-h-[68vh] print:max-h-none print:border-none print:shadow-none print:p-0 print:bg-white touch-pan-x touch-pan-y"
         >
           {score.view.layout === 'vertical' ? (
             <ScoreSheetVertical
@@ -1097,6 +1086,18 @@ export default function App() {
             onTempoChange={bpm => mutateScore(d => (d.tempo = bpm))}
           />
         </div>
+
+        {/* Virtual 13-String Koto Instrument (Placed at the very bottom, out of the way) */}
+        {score.view.showKotoBoard && (
+          <div className="no-print mt-1 pb-4">
+            <VirtualKoto
+              score={score}
+              onSelectString={inputString}
+              activeStrings={curSlot?.notes || []}
+              onClose={() => mutateScore(d => (d.view.showKotoBoard = false))}
+            />
+          </div>
+        )}
       </div>
 
       {/* Modals */}
