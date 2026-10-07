@@ -14,6 +14,7 @@ import {
   createNewBeat,
   createNewMeasure,
   createEmptyScore,
+  normalizeScore,
   getPitches,
   clamp,
   LeftHandOrn,
@@ -43,9 +44,7 @@ export default function App() {
       const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed.measures)) {
-          return parsed;
-        }
+        return normalizeScore(parsed, createSakuraScore());
       }
     } catch {
       // ignore

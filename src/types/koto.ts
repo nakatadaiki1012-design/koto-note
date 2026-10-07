@@ -245,8 +245,92 @@ export function getPitches(score: KotoScore): number[] {
 }
 
 export function getTuningLabel(score: KotoScore): string {
-  const t = score.tuning;
+  const t = score.tuning || { preset: 'hira', root: 62, custom: null };
   if (t.preset === 'custom') return 'カスタム調弦';
   const presetName = TUNING_PRESETS[t.preset]?.name || '平調子';
   return `${presetName}（${RITSU_NAMES[pc(t.root)]} ${noteName(t.root, false)}）`;
+}
+
+export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
+  const base = fallback || createEmptyScore();
+  if (!raw || typeof raw !== 'object') return base;
+
+  const validPreset = raw.tuning?.preset && TUNING_PRESETS[raw.tuning.preset] ? raw.tuning.preset : 'hira';
+  const root = typeof raw.tuning?.root === 'number' && !isNaN(raw.tuning.root) ? clamp(raw.tuning.root, 36, 96) : 62;
+  const custom = Array.isArray(raw.tuning?.custom) && raw.tuning.custom.length === 13 ? raw.tuning.custom.map((p: any) => Number(p) || 60) : null;
+
+  const defaultV = getDefaultView();
+  const v = raw.view || {};
+  const view: ViewSettings = {
+    numerals: v.numerals === 'arabic' ? 'arabic' : 'kanji',
+    ruby: ['off', 'doremi', 'cde'].includes(v.ruby) ? v.ruby : 'off',
+    layout: v.layout === 'horizontal' ? 'horizontal' : 'vertical',
+    paper: v.paper === 'landscape' ? 'landscape' : 'portrait',
+    chart: v.chart === 'off' ? 'off' : 'on',
+    perLine: typeof v.perLine === 'number' && v.perLine > 0 ? clamp(Math.round(v.perLine), 1, 8) : 4,
+    showLyrics: !!v.showLyrics,
+    showKotoBoard: v.showKotoBoard !== false,
+    zoom: typeof v.zoom === 'number' && !isNaN(v.zoom) && v.zoom >= 0.3 ? clamp(v.zoom, 0.4, 2.0) : 1.0
+  };
+
+  const beatsPerMeasure = [2, 3, 4].includes(raw.beatsPerMeasure) ? raw.beatsPerMeasure : 4;
+
+  const measures = Array.isArray(raw.measures) && raw.measures.length > 0 ? raw.measures.map((m: any) => {
+    const rawBeats = Array.isArray(m?.beats) ? m.beats : [];
+    const beats: Beat[] = [];
+    for (let bIdx = 0; bIdx < beatsPerMeasure; bIdx++) {
+      const b = rawBeats[bIdx];
+      const div = [1, 2, 3, 4].includes(b?.div) ? b.div : 1;
+      const rawSlots = Array.isArray(b?.slots) ? b.slots : [];
+      const slots: Slot[] = [];
+      for (let sIdx = 0; sIdx < div; sIdx++) {
+        const sl = rawSlots[sIdx];
+        if (sl && typeof sl === 'object') {
+          slots.push({
+            notes: Array.isArray(sl.notes) ? sl.notes.filter((n: any) => typeof n === 'number' && n >= 0 && n <= 12) : [],
+            rest: !!sl.rest,
+            tie: !!sl.tie,
+            oshi: [0, 1, 2].includes(sl.oshi) ? sl.oshi : 0,
+            ato: !!sl.ato,
+            hanashi: !!sl.hanashi,
+            hikiiro: !!sl.hikiiro,
+            tsuki: !!sl.tsuki,
+            yuri: !!sl.yuri,
+            sukui: !!sl.sukui,
+            kaki: !!sl.kaki,
+            hiki: !!sl.hiki,
+            trem: !!sl.trem,
+            nagashi: !!sl.nagashi
+          });
+        } else {
+          slots.push(createNewSlot());
+        }
+      }
+      beats.push({
+        div,
+        slots,
+        lyrics: typeof b?.lyrics === 'string' ? b.lyrics : ''
+      });
+    }
+    return { beats };
+  }) : base.measures;
+
+  return {
+    id: typeof raw.id === 'string' ? raw.id : base.id,
+    app: 'koto-bunkafu',
+    version: 2,
+    title: typeof raw.title === 'string' ? raw.title : '無題',
+    subtitle: typeof raw.subtitle === 'string' ? raw.subtitle : '',
+    composer: typeof raw.composer === 'string' ? raw.composer : '',
+    tempo: typeof raw.tempo === 'number' && !isNaN(raw.tempo) && raw.tempo >= 20 ? clamp(raw.tempo, 20, 260) : 80,
+    beatsPerMeasure,
+    tuning: {
+      preset: validPreset,
+      root,
+      custom
+    },
+    view,
+    measures,
+    updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : Date.now()
+  };
 }
