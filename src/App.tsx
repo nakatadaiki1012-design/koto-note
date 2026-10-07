@@ -100,7 +100,6 @@ export default function App() {
   // Initial scroll alignment to the right for vertical Bunkafu
   useEffect(() => {
     if (score.view.layout === 'vertical' && scoreContainerRef.current) {
-      // Small timeout to allow render
       setTimeout(() => {
         if (scoreContainerRef.current) {
           scoreContainerRef.current.scrollLeft = scoreContainerRef.current.scrollWidth;
@@ -143,6 +142,134 @@ export default function App() {
     setScore(next);
     setHistoryVersion(v => v + 1);
   }, [score]);
+
+  // Fit-all overview mode state
+  const isFitAll = score.view.zoom <= 0.72;
+
+  const handleToggleFitAll = useCallback(() => {
+    mutateScore(d => {
+      if (d.view.zoom <= 0.72) {
+        d.view.zoom = 1.0;
+      } else {
+        d.view.zoom = 0.58;
+      }
+    });
+  }, [mutateScore]);
+
+  const handleSetZoom100 = useCallback(() => {
+    mutateScore(d => {
+      d.view.zoom = 1.0;
+    });
+  }, [mutateScore]);
+
+  // Touch gesture handling: Swipe between measures, Double-tap to toggle zoom, Pinch to zoom
+  const touchStateRef = useRef<{
+    startX: number;
+    startY: number;
+    startTime: number;
+    lastTapTime: number;
+    initialDistance: number;
+    initialZoom: number;
+    isPinching: boolean;
+  }>({
+    startX: 0,
+    startY: 0,
+    startTime: 0,
+    lastTapTime: 0,
+    initialDistance: 0,
+    initialZoom: 1,
+    isPinching: false
+  });
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const now = performance.now();
+      const lastTap = touchStateRef.current.lastTapTime;
+      touchStateRef.current.startX = touch.clientX;
+      touchStateRef.current.startY = touch.clientY;
+      touchStateRef.current.startTime = now;
+      touchStateRef.current.isPinching = false;
+
+      // Double tap detection (within 320ms) -> Toggle 全体表示 / 100%
+      if (now - lastTap < 320) {
+        handleToggleFitAll();
+        touchStateRef.current.lastTapTime = 0;
+      } else {
+        touchStateRef.current.lastTapTime = now;
+      }
+    } else if (e.touches.length === 2) {
+      // Pinch start
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      touchStateRef.current.initialDistance = dist;
+      touchStateRef.current.initialZoom = score.view.zoom;
+      touchStateRef.current.isPinching = true;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && touchStateRef.current.isPinching) {
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const ratio = dist / (touchStateRef.current.initialDistance || 1);
+      const newZoom = clamp(Math.round(touchStateRef.current.initialZoom * ratio * 100) / 100, 0.45, 1.5);
+      mutateScore(d => {
+        d.view.zoom = newZoom;
+      });
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStateRef.current.isPinching) {
+      touchStateRef.current.isPinching = false;
+      return;
+    }
+
+    if (e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStateRef.current.startX;
+      const deltaY = touch.clientY - touchStateRef.current.startY;
+      const elapsed = performance.now() - touchStateRef.current.startTime;
+
+      // Horizontal swipe gesture detection
+      if (Math.abs(deltaX) > 55 && Math.abs(deltaY) < 45 && elapsed < 400) {
+        const v = score.view.layout === 'vertical';
+        const step = score.view.perLine || 2;
+        if (v) {
+          // Vertical layout: right to left reading
+          // Finger moves left (deltaX < 0) -> advance to later measures (to the left)
+          if (deltaX < 0) {
+            setCursor(prev => ({
+              ...prev,
+              m: Math.min(score.measures.length - 1, prev.m + step)
+            }));
+          } else {
+            // Finger moves right (deltaX > 0) -> retreat to earlier measures (to the right)
+            setCursor(prev => ({
+              ...prev,
+              m: Math.max(0, prev.m - step)
+            }));
+          }
+        } else {
+          // Horizontal layout
+          if (deltaX < 0) {
+            setCursor(prev => ({
+              ...prev,
+              m: Math.min(score.measures.length - 1, prev.m + step)
+            }));
+          } else {
+            setCursor(prev => ({
+              ...prev,
+              m: Math.max(0, prev.m - step)
+            }));
+          }
+        }
+      }
+    }
+  };
 
   // Audio Playback Scheduler Loop
   const playStateRef = useRef<{
@@ -592,14 +719,6 @@ export default function App() {
     });
   }, []);
 
-  // Quick mobile layout fit: 2 measures per column, zoom 90%
-  const handleFitMobile = useCallback(() => {
-    mutateScore(d => {
-      d.view.perLine = 2;
-      d.view.zoom = 0.95;
-    });
-  }, [mutateScore]);
-
   // Keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -867,16 +986,19 @@ export default function App() {
           onOpenHelp={() => setIsHelpOpen(true)}
         />
 
-        {/* Measure Scrubber / Quick Navigation Bar */}
+        {/* Measure Scrubber / Quick Navigation Bar with Fit-All Overview Switcher */}
         <MeasureNavigator
           totalMeasures={score.measures.length}
           currentMeasure={cursor.m}
           perLine={score.view.perLine}
           layout={score.view.layout}
+          zoom={score.view.zoom}
+          isFitAll={isFitAll}
           onSelectMeasure={mIdx => setCursor({ m: mIdx, b: 0, s: 0, low: false })}
           onAddMeasure={handleAddMeasure}
           onSetPerLine={perLine => mutateScore(d => (d.view.perLine = perLine))}
-          onFitMobile={handleFitMobile}
+          onToggleFitAll={handleToggleFitAll}
+          onSetZoom100={handleSetZoom100}
         />
 
         {/* Virtual 13-String Koto Instrument (if enabled) */}
@@ -893,7 +1015,10 @@ export default function App() {
         {/* Main Bunkafu Score Paper Sheet (Continuous horizontal flow, never awkwardly wrapped) */}
         <main
           ref={scoreContainerRef}
-          className="w-full rounded-2xl border border-stone-300 bg-[#fdfcf8] p-3 sm:p-6 shadow-md overflow-x-auto overflow-y-auto max-h-[68vh] print:max-h-none print:border-none print:shadow-none print:p-0 print:bg-white"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="w-full rounded-2xl border border-stone-300 bg-[#fdfcf8] p-3 sm:p-6 shadow-md overflow-x-auto overflow-y-auto max-h-[66vh] print:max-h-none print:border-none print:shadow-none print:p-0 print:bg-white touch-pan-x touch-pan-y"
         >
           {score.view.layout === 'vertical' ? (
             <ScoreSheetVertical
