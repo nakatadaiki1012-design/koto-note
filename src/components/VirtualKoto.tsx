@@ -69,19 +69,21 @@ export const VirtualKoto: React.FC<VirtualKotoProps> = ({
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="rounded p-1 text-amber-300/70 hover:bg-amber-900/60 hover:text-amber-100 cursor-pointer"
+            className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-amber-300/80 hover:bg-amber-900/60 hover:text-amber-100 cursor-pointer"
             title={isCollapsed ? '琴台を展開' : '琴台を折りたたむ'}
           >
-            {isCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {isCollapsed ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            <span>{isCollapsed ? '展開' : '畳む'}</span>
           </button>
 
           {onClose && (
             <button
               onClick={onClose}
-              className="rounded p-1 text-amber-300/70 hover:bg-amber-900/60 hover:text-amber-100 cursor-pointer"
+              className="flex items-center gap-1 rounded px-2 py-0.5 text-xs bg-amber-950/80 text-amber-200 hover:bg-amber-800 hover:text-white cursor-pointer transition-colors border border-amber-800/60"
               title="琴台を閉じる"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
+              <span>閉じる</span>
             </button>
           )}
         </div>

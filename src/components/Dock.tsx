@@ -75,6 +75,7 @@ interface DockProps {
   onSetCountIn: (active: boolean) => void;
   onSetMetronome: (active: boolean) => void;
   onTempoChange: (tempo: number) => void;
+  onToggleKotoBoard?: () => void;
 }
 
 export const Dock: React.FC<DockProps> = ({
@@ -116,7 +117,8 @@ export const Dock: React.FC<DockProps> = ({
   onSetVolume,
   onSetCountIn,
   onSetMetronome,
-  onTempoChange
+  onTempoChange,
+  onToggleKotoBoard
 }) => {
   // Mobile / compact panel state
   const [activeTab, setActiveTab] = useState<'strings' | 'ornaments' | 'measures'>('strings');
@@ -350,7 +352,7 @@ export const Dock: React.FC<DockProps> = ({
 
               {/* Quick Secondary Controls: Chord Mode & Undo/Redo */}
               <div className="flex items-center justify-between text-xs text-stone-600 pt-1 border-t border-stone-200/60">
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     onClick={onToggleChordMode}
                     className={`rounded-md px-2.5 py-1 font-semibold cursor-pointer border ${
@@ -359,8 +361,21 @@ export const Dock: React.FC<DockProps> = ({
                         : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'
                     }`}
                   >
-                    和音（合わせ）モード {isChordMode ? 'ON' : 'OFF'}
+                    和音モード {isChordMode ? 'ON' : 'OFF'}
                   </button>
+                  {onToggleKotoBoard && (
+                    <button
+                      onClick={onToggleKotoBoard}
+                      className={`rounded-md px-2.5 py-1 font-semibold cursor-pointer border transition-colors ${
+                        score.view.showKotoBoard
+                          ? 'bg-amber-100 text-amber-900 border-amber-400 font-bold'
+                          : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'
+                      }`}
+                      title="ページ最下部に実機風の十三絃仮想琴台を表示・非表示"
+                    >
+                      仮想琴台 {score.view.showKotoBoard ? '表示中 (最下部)' : '非表示'}
+                    </button>
+                  )}
                   <span className="text-[11px] text-stone-400 hidden sm:inline">
                     ※ 弦キーを押すと音が入ってカーソルが進みます
                   </span>

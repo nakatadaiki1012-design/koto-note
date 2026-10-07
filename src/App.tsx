@@ -1084,6 +1084,7 @@ export default function App() {
             onSetCountIn={setCountIn}
             onSetMetronome={setMetronome}
             onTempoChange={bpm => mutateScore(d => (d.tempo = bpm))}
+            onToggleKotoBoard={() => mutateScore(d => { d.view.showKotoBoard = !d.view.showKotoBoard; })}
           />
         </div>
 

@@ -258,12 +258,13 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => onUpdateView({ showKotoBoard: !view.showKotoBoard })}
                 className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold cursor-pointer border transition-colors ${
                   view.showKotoBoard
-                    ? 'border-amber-300 bg-amber-50 text-amber-900'
-                    : 'border-stone-200 bg-white text-stone-500'
+                    ? 'border-amber-400 bg-amber-50 text-amber-900 font-bold'
+                    : 'border-stone-200 bg-white text-stone-500 hover:text-stone-800'
                 }`}
+                title="ページ最下部に十三絃の仮想琴台（奏台）を表示・非表示"
               >
                 <Music className="h-3 w-3" />
-                <span>十三絃盤</span>
+                <span>仮想琴台</span>
               </button>
 
               <button

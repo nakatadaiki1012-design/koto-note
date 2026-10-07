@@ -269,7 +269,7 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
     chart: v.chart === 'off' ? 'off' : 'on',
     perLine: typeof v.perLine === 'number' && v.perLine > 0 ? clamp(Math.round(v.perLine), 1, 8) : 4,
     showLyrics: !!v.showLyrics,
-    showKotoBoard: v.showKotoBoard !== false,
+    showKotoBoard: !!v.showKotoBoard,
     zoom: typeof v.zoom === 'number' && !isNaN(v.zoom) && v.zoom >= 0.3 ? clamp(v.zoom, 0.4, 2.0) : 1.0
   };
 
