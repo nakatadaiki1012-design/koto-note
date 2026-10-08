@@ -134,6 +134,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
 
   return (
     <div
+      data-font={score.view.fontStyle || 'shippori'}
       style={{ zoom: score.view.zoom }}
       className={`relative flex flex-col gap-6 select-none ${fontClass} text-stone-900 transition-all w-full max-w-5xl mx-auto pb-6`}
     >
@@ -433,7 +434,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                             </div>
                           ) : div === 2 ? (
                             /* 8th notes (♪♪) two horizontal cells */
-                            <div className="flex flex-1 divide-x divide-stone-500">
+                            <div className="flex flex-1 divide-x divide-stone-300">
                               {beat.slots.map((sl, sIdx) => {
                                 const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
                                 const isMultiSel = selectedSlotKeys?.has(slotKey);

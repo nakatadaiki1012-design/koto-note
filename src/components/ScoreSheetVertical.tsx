@@ -145,6 +145,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
   return (
     <div
       ref={containerRef}
+      data-font={score.view.fontStyle || 'shippori'}
       style={{ zoom: score.view.zoom }}
       className={`relative inline-flex flex-row-reverse flex-nowrap items-start gap-x-0 select-none ${fontClass} text-stone-900 transition-all min-w-max pb-4 ${
         isRubyOn ? 'ruby-active' : ''
@@ -474,8 +475,8 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                               />
                             </div>
                           ) : div === 2 ? (
-                            /* 8th notes (♪♪): Two equal halves with clean standard line */
-                            <div className="flex flex-col h-full divide-y divide-stone-500">
+                            /* 8th notes (♪♪): Two equal halves with subtle dividing line */
+                            <div className="flex flex-col h-full divide-y divide-stone-300">
                               {beat.slots.map((sl, sIdx) => {
                                 const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
                                 const isMultiSel = selectedSlotKeys?.has(slotKey);
@@ -499,7 +500,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                             </div>
                           ) : div === 3 ? (
                             /* Triplets (3連符) */
-                            <div className="relative flex flex-col h-full divide-y divide-stone-400">
+                            <div className="relative flex flex-col h-full divide-y divide-stone-300">
                               <span className="absolute left-1 bottom-0.5 text-[9px] italic font-sans text-stone-500 pointer-events-none">
                                 3
                               </span>
@@ -526,8 +527,8 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                             </div>
                           ) : (
                             /* 16th notes (♬) */
-                            <div className="flex flex-col h-full divide-y divide-stone-900">
-                              <div className="flex flex-1 divide-x divide-stone-400">
+                            <div className="flex flex-col h-full divide-y divide-stone-300">
+                              <div className="flex flex-1 divide-x divide-stone-300">
                                 {[0, 1].map(sIdx => {
                                   const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
                                   const isMultiSel = selectedSlotKeys?.has(slotKey);

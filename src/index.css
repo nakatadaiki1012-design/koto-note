@@ -7,28 +7,34 @@
   }
 }
 
+/* Dynamic theme font mapping based on data-font attribute or font class */
+[data-font="shippori"], .font-shippori {
+  --f-score: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  font-family: var(--f-score) !important;
+}
+
+[data-font="kaisei"], .font-kaisei {
+  --f-score: "Kaisei Decol", "Shippori Mincho B1", serif;
+  font-family: var(--f-score) !important;
+}
+
+[data-font="yuji"], .font-yuji {
+  --f-score: "Yuji Boku", "Shippori Mincho B1", serif;
+  font-family: var(--f-score) !important;
+}
+
+[data-font="klee"], .font-klee {
+  --f-score: "Klee One", "Zen Kaku Gothic New", sans-serif;
+  font-family: var(--f-score) !important;
+}
+
+[data-font="noto"], .font-noto {
+  --f-score: "Noto Serif JP", "Hiragino Mincho ProN", serif;
+  font-family: var(--f-score) !important;
+}
+
 .font-score {
   font-family: var(--f-score);
-}
-
-.font-shippori {
-  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
-}
-
-.font-kaisei {
-  font-family: "Kaisei Decol", "Shippori Mincho B1", serif;
-}
-
-.font-yuji {
-  font-family: "Yuji Boku", "Shippori Mincho B1", serif;
-}
-
-.font-klee {
-  font-family: "Klee One", "Zen Kaku Gothic New", sans-serif;
-}
-
-.font-noto {
-  font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif;
 }
 
 .font-ui {
