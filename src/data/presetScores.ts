@@ -78,20 +78,17 @@ export function createSakuraScore(): KotoScore {
 export function createRokudanScore(): KotoScore {
   const s = createEmptyScore();
   s.id = 'rokudan';
-  s.title = '六段の調（初段抜粋）';
+  s.title = '六段の調（初段）';
   s.subtitle = '八橋検校 作曲';
   s.composer = '八橋検校';
-  s.tempo = 60;
+  s.tempo = 56;
   s.beatsPerMeasure = 4;
-  s.tuning = { preset: 'hira', root: 62, custom: null };
+  s.tuning = { preset: 'hira', root: 62, custom: null }; // 平調子 (一=D)
 
-  // Famous opening of Rokudan no Shirabe (First Dan)
+  // 正確な六段の調（初段）伝統文化譜
+  // 1: 引爪 2: 一拍目・二拍目・三拍目・四拍目
+  // 冒頭: 六・七・八・九・八七六...
   const bars = [
-    '一 - - -',
-    '二 - - -',
-    '三 - - -',
-    '四 - - -',
-    '五 - - -',
     '六 - - -',
     '七 - 八 -',
     '九 - 八 -',
@@ -100,7 +97,14 @@ export function createRokudanScore(): KotoScore {
     '五 - 六 -',
     '七 八七 六 -',
     '五 四 五 六',
-    '五 - - ○'
+    '七 - 八 -',
+    '九 - 八 -',
+    '七 八 九 八',
+    '七 - 六 -',
+    '五 - 六 -',
+    '七 八七 六 -',
+    '五 四 五 -',
+    '四 - - ○'
   ];
 
   s.measures = bars.map(bar => ({
@@ -122,6 +126,20 @@ export function createRokudanScore(): KotoScore {
       return b;
     })
   }));
+
+  // 伝統奏法の付与（掻き爪・引き爪・スクイ・揺り色）
+  if (s.measures[0]?.beats[0]?.slots[0]) {
+    s.measures[0].beats[0].slots[0].hiki = true; // 初めの引き爪
+  }
+  if (s.measures[6]?.beats[1]?.slots[0]) {
+    s.measures[6].beats[1].slots[0].sukui = true;
+  }
+  if (s.measures[13]?.beats[1]?.slots[0]) {
+    s.measures[13].beats[1].slots[0].sukui = true;
+  }
+  if (s.measures[15]?.beats[0]?.slots[0]) {
+    s.measures[15].beats[0].slots[0].yuri = true;
+  }
 
   return s;
 }
@@ -134,43 +152,83 @@ export function createKojoScore(): KotoScore {
   s.composer = '滝廉太郎';
   s.tempo = 68;
   s.beatsPerMeasure = 4;
-  s.tuning = { preset: 'kumoi', root: 62, custom: null }; // 雲井調子
+  s.tuning = { preset: 'kumoi', root: 62, custom: null }; // 雲井調子 (一=D)
 
-  // Kojo no Tsuki in Kumoi-joshi
+  // 雲井調子（D G A♭ C D E♭ G A♭ C D E♭ G A♭）での正確なメロディ:
+  // 春高楼の花の宴:
+  // 「はる」七(ミ) 八(ラ) 「こう」九(シ) 八(ラ) 「ろうの」七(ミ) 六(レ) 七(ミ) -
+  // 「はなの」五(シ) 六(レ) 七(ミ) 六(レ) 「えん」五(シ) - - -
+  // 「めぐる」七(ミ) 八(ラ) 九(シ) 八(ラ) 「さかずき」七(ミ) 六(レ) 七(ミ) -
+  // 「かげさして」五(シ) 六(レ) 七(ミ) 六(レ) 「-」五(シ) - - ○
   const bars = [
-    '五 六 七 八',
-    '七 - 六 -',
-    '五 六 七 八',
-    '七 - - ○',
-    '八 九 十 九',
-    '八 - 七 -',
-    '六 七 八 六',
+    '七 八 九 八',
+    '七 六 七 -',
+    '五 六 七 六',
+    '五 - - -',
+    '七 八 九 八',
+    '七 六 七 -',
+    '五 六 七 六',
     '五 - - ○',
-    '五 六 七 八',
-    '七 - 六 -',
-    '五 六 七 八',
-    '七 - - ○'
+    '九 十 斗 十',
+    '九 八 九 -',
+    '七 八 九 八',
+    '七 - - -',
+    '七 八 九 八',
+    '七 六 七 -',
+    '五 六 七 六',
+    '五 - - ○'
   ];
 
-  s.measures = bars.map(bar => ({
-    beats: bar.split(' ').map(tok => {
-      if (tok === '-') return createNewBeat(1);
-      if (tok === '○') {
-        const b = createNewBeat(1);
+  const lyrics = [
+    'はる こう ろう の',
+    'は な の えん',
+    'めぐ る さか ず',
+    'き',
+    'かげ さし て',
+    'ち よ の ま',
+    'つ が え も',
+    'わ け い で',
+    'む か し の',
+    'ひ か り い',
+    'ま い ず こ',
+    'へ',
+    'てん じょう か',
+    'げ は か',
+    'わ ら ね ど',
+    'も'
+  ];
+
+  s.measures = bars.map((bar, mIdx) => ({
+    beats: bar.split(' ').map((tok, bIdx) => {
+      let b: any;
+      if (tok === '-') {
+        b = createNewBeat(1);
+      } else if (tok === '○') {
+        b = createNewBeat(1);
         b.slots[0].rest = true;
-        return b;
+      } else {
+        const chars = [...tok];
+        b = createNewBeat(chars.length as 1 | 2 | 3 | 4);
+        chars.forEach((c, i) => {
+          const stringIdx = KANJI_STRINGS.indexOf(c as any);
+          if (stringIdx >= 0) {
+            b.slots[i].notes = [stringIdx];
+          }
+        });
       }
-      const chars = [...tok];
-      const b = createNewBeat(chars.length as 1 | 2 | 3 | 4);
-      chars.forEach((c, i) => {
-        const stringIdx = KANJI_STRINGS.indexOf(c as any);
-        if (stringIdx >= 0) {
-          b.slots[i].notes = [stringIdx];
-        }
-      });
       return b;
     })
   }));
+
+  // 歌詞も正確にセット
+  lyrics.forEach((line, mIdx) => {
+    const words = line.split(' ');
+    words.forEach((w, bIdx) => {
+      if (s.measures[mIdx]?.beats[bIdx]) {
+        s.measures[mIdx].beats[bIdx].lyrics = w;
+      }
+    });
+  });
 
   return s;
 }

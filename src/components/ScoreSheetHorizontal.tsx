@@ -550,6 +550,16 @@ function renderSlotContentH(
     return <span className="w-3/4 h-0.5 bg-stone-900 block"></span>;
   }
 
+  if (sl.repeat2) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full" title="2拍繰り返し（重ね記号）">
+        <span className="font-score font-black text-2xl sm:text-3xl text-stone-900 leading-none select-none tracking-tighter">
+          𝄥
+        </span>
+      </div>
+    );
+  }
+
   if (!sl.notes || !sl.notes.length) return null;
 
   let lh = '';

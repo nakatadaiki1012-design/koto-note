@@ -59,6 +59,7 @@ interface DockProps {
   onToggleChordMode: () => void;
   onInputRest: () => void;
   onInputTie: () => void;
+  onInputRepeat2?: () => void;
   onInputClear: () => void;
   onToggleOrn: (ornKey: string) => void;
   onAddMeasure: () => void;
@@ -106,6 +107,7 @@ export const Dock: React.FC<DockProps> = ({
   onToggleChordMode,
   onInputRest,
   onInputTie,
+  onInputRepeat2,
   onInputClear,
   onToggleOrn,
   onAddMeasure,
@@ -263,6 +265,15 @@ export const Dock: React.FC<DockProps> = ({
           >
             ー
           </button>
+          {onInputRepeat2 && (
+            <button
+              onClick={onInputRepeat2}
+              className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs font-bold text-stone-800 hover:bg-amber-50 hover:border-amber-400 cursor-pointer"
+              title="2拍繰り返し記号 (く / 重ね)"
+            >
+              く
+            </button>
+          )}
           <button
             onClick={onInputClear}
             className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer"

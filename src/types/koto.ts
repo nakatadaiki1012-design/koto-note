@@ -122,6 +122,7 @@ export interface Slot {
   trem?: boolean;
   nagashi?: boolean;
   finger?: number; // 1=親指, 2=人差し指, 3=中指(3)
+  repeat2?: boolean; // 2拍同じことを繰り返す記号（く / 𝄥 / 重ね）
 }
 
 export interface Beat {
@@ -312,7 +313,8 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
             hiki: !!sl.hiki,
             trem: !!sl.trem,
             nagashi: !!sl.nagashi,
-            finger: typeof sl.finger === 'number' && [1, 2, 3].includes(sl.finger) ? sl.finger : undefined
+            finger: typeof sl.finger === 'number' && [1, 2, 3].includes(sl.finger) ? sl.finger : undefined,
+            repeat2: !!sl.repeat2
           });
         } else {
           slots.push(createNewSlot());

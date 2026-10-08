@@ -624,6 +624,17 @@ function renderSlotContent(
     return <span className="w-0.5 h-3/4 bg-stone-900 block"></span>;
   }
 
+  // 2拍繰り返し記号（ひらがなの「く」のように2拍を反復する伝統文化譜記号）
+  if (sl.repeat2) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full" title="2拍繰り返し（重ね記号）">
+        <span className="font-score font-black text-2xl sm:text-3xl text-stone-900 leading-none select-none tracking-tighter">
+          𝄥
+        </span>
+      </div>
+    );
+  }
+
   if (!sl.notes || !sl.notes.length) return null;
 
   // Left-hand marks (オ, ヲ, ア, ハ, ヒ, ツ, ユ) -> 漢数字の左側に大きく表示するのがセオリー

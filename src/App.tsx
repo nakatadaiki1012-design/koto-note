@@ -333,12 +333,28 @@ export default function App() {
       ms.beats.forEach((bt, b) => {
         items.push({ beat: m * bpm + b, m, b, s: 0, metro: true, accent: b === 0 });
         bt.slots.forEach((sl, s) => {
+          let resolvedSlot = sl;
+          // If repeat2 (2拍繰り返し), duplicate notes from 2 beats prior
+          if (sl.repeat2) {
+            let prevB = b - 2;
+            let prevM = m;
+            if (prevB < 0) {
+              prevM = m - 1;
+              prevB = bpm + prevB;
+            }
+            if (prevM >= 0) {
+              const prevBeat = score.measures[prevM]?.beats[prevB];
+              if (prevBeat && prevBeat.slots[s]) {
+                resolvedSlot = prevBeat.slots[s];
+              }
+            }
+          }
           items.push({
             beat: m * bpm + b + s / bt.div,
             m,
             b,
             s,
-            slot: sl
+            slot: resolvedSlot
           });
         });
       });
@@ -594,7 +610,21 @@ export default function App() {
       if (!slot) return;
       slot.notes = [];
       slot.rest = false;
+      slot.repeat2 = false;
       slot.tie = true;
+    });
+  }, [cursor, mutateScore]);
+
+  const handleInputRepeat2 = useCallback(() => {
+    mutateScore(draft => {
+      const beat = draft.measures[cursor.m]?.beats[cursor.b];
+      if (!beat) return;
+      const slot = beat.slots[cursor.s];
+      if (!slot) return;
+      slot.notes = [];
+      slot.rest = false;
+      slot.tie = false;
+      slot.repeat2 = true;
     });
   }, [cursor, mutateScore]);
 
@@ -1126,56 +1156,60 @@ export default function App() {
           onSetZoom100={handleSetZoom100}
         />
 
-        {/* Main Bunkafu Score Paper Sheet (Continuous horizontal flow, never awkwardly wrapped) */}
+        {/* Main Bunkafu Score Paper Sheet (Continuous horizontal flow, centered in viewport) */}
         <main
           ref={scoreContainerRef}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="w-full rounded-2xl border border-stone-300 bg-[#fdfcf8] p-3 sm:p-6 shadow-md overflow-x-auto overflow-y-auto max-h-[68vh] print:max-h-none print:border-none print:shadow-none print:p-0 print:bg-white touch-pan-x touch-pan-y"
+          className="w-full rounded-2xl border border-stone-300 bg-[#fdfcf8] p-3 sm:p-6 shadow-md overflow-x-auto overflow-y-auto max-h-[68vh] print:max-h-none print:border-none print:shadow-none print:p-0 print:bg-white touch-pan-x touch-pan-y flex justify-center items-start"
         >
           {score.view.layout === 'vertical' ? (
-            <ScoreSheetVertical
-              score={score}
-              cursor={cursor}
-              currentPlayKey={currentPlayKey}
-              selectedRange={selectedRange}
-              selectedSlotKeys={selectedSlotKeys}
-              onSlotClick={handleSlotClick}
-              onMeasureClick={handleMeasureClick}
-              onLyricsChange={handleLyricsChange}
-              onUpdateScoreMeta={meta => mutateScore(d => Object.assign(d, meta))}
-              onInsertMeasure={handleInsertMeasureAt}
-              onDuplicateMeasure={handleDuplicateMeasure}
-              onDeleteMeasure={handleDeleteMeasureAt}
-              onAddMeasure={handleAddMeasure}
-              onSetLoop={(active, a, b) => {
-                setLoopActive(active);
-                if (a != null && b != null) setLoopRange([a, b]);
-              }}
-              autoScroll={true}
-            />
+            <div className="min-w-fit mx-auto flex justify-center">
+              <ScoreSheetVertical
+                score={score}
+                cursor={cursor}
+                currentPlayKey={currentPlayKey}
+                selectedRange={selectedRange}
+                selectedSlotKeys={selectedSlotKeys}
+                onSlotClick={handleSlotClick}
+                onMeasureClick={handleMeasureClick}
+                onLyricsChange={handleLyricsChange}
+                onUpdateScoreMeta={meta => mutateScore(d => Object.assign(d, meta))}
+                onInsertMeasure={handleInsertMeasureAt}
+                onDuplicateMeasure={handleDuplicateMeasure}
+                onDeleteMeasure={handleDeleteMeasureAt}
+                onAddMeasure={handleAddMeasure}
+                onSetLoop={(active, a, b) => {
+                  setLoopActive(active);
+                  if (a != null && b != null) setLoopRange([a, b]);
+                }}
+                autoScroll={true}
+              />
+            </div>
           ) : (
-            <ScoreSheetHorizontal
-              score={score}
-              cursor={cursor}
-              currentPlayKey={currentPlayKey}
-              selectedRange={selectedRange}
-              selectedSlotKeys={selectedSlotKeys}
-              onSlotClick={handleSlotClick}
-              onMeasureClick={handleMeasureClick}
-              onLyricsChange={handleLyricsChange}
-              onUpdateScoreMeta={meta => mutateScore(d => Object.assign(d, meta))}
-              onInsertMeasure={handleInsertMeasureAt}
-              onDuplicateMeasure={handleDuplicateMeasure}
-              onDeleteMeasure={handleDeleteMeasureAt}
-              onAddMeasure={handleAddMeasure}
-              onSetLoop={(active, a, b) => {
-                setLoopActive(active);
-                if (a != null && b != null) setLoopRange([a, b]);
-              }}
-              autoScroll={true}
-            />
+            <div className="w-full max-w-5xl mx-auto flex justify-center">
+              <ScoreSheetHorizontal
+                score={score}
+                cursor={cursor}
+                currentPlayKey={currentPlayKey}
+                selectedRange={selectedRange}
+                selectedSlotKeys={selectedSlotKeys}
+                onSlotClick={handleSlotClick}
+                onMeasureClick={handleMeasureClick}
+                onLyricsChange={handleLyricsChange}
+                onUpdateScoreMeta={meta => mutateScore(d => Object.assign(d, meta))}
+                onInsertMeasure={handleInsertMeasureAt}
+                onDuplicateMeasure={handleDuplicateMeasure}
+                onDeleteMeasure={handleDeleteMeasureAt}
+                onAddMeasure={handleAddMeasure}
+                onSetLoop={(active, a, b) => {
+                  setLoopActive(active);
+                  if (a != null && b != null) setLoopRange([a, b]);
+                }}
+                autoScroll={true}
+              />
+            </div>
           )}
         </main>
 
@@ -1208,6 +1242,7 @@ export default function App() {
             onToggleChordMode={() => setIsChordMode(!isChordMode)}
             onInputRest={handleInputRest}
             onInputTie={handleInputTie}
+            onInputRepeat2={handleInputRepeat2}
             onInputClear={handleInputClear}
             onToggleOrn={handleToggleOrn}
             onAddMeasure={handleAddMeasure}
