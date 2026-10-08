@@ -218,6 +218,15 @@ export function createKojoScore(): KotoScore {
 
 export const PRESET_SONGS: PresetSongInfo[] = [
   {
+    id: 'kojo',
+    title: '荒城の月',
+    subtitle: '土井晩翠 作詞 / 滝廉太郎 作曲',
+    composer: '滝廉太郎 作曲',
+    description: '滝廉太郎の名曲。平調子より四を一音上げる正確な旋律（五五七八九八七・六六五四五…）。',
+    tuningName: '平調子（四を一音上げる）',
+    score: createKojoScore
+  },
+  {
     id: 'sakura',
     title: 'さくらさくら',
     subtitle: '日本古謡',
@@ -234,14 +243,5 @@ export const PRESET_SONGS: PresetSongInfo[] = [
     description: '箏曲の最高峰の古典本曲。静寂から始まる格式ある格調高い調べ。',
     tuningName: '平調子',
     score: createRokudanScore
-  },
-  {
-    id: 'kojo',
-    title: '荒城の月',
-    subtitle: '滝廉太郎 作曲',
-    composer: '滝廉太郎',
-    description: '哀愁漂う雲井調子の響きが美しい名曲。',
-    tuningName: '雲井調子',
-    score: createKojoScore
   }
 ];

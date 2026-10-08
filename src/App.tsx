@@ -22,7 +22,7 @@ import {
   LEFT_HAND_ORNS,
   RIGHT_HAND_ORNS
 } from './types/koto';
-import { createSakuraScore } from './data/presetScores';
+import { createSakuraScore, createKojoScore } from './data/presetScores';
 import { kotoSynth } from './audio/kotoSynth';
 import { Header } from './components/Header';
 import { Dock } from './components/Dock';
@@ -36,7 +36,7 @@ import { ExportModal } from './components/ExportModal';
 import { HelpModal } from './components/HelpModal';
 import { PracticeModeOverlay } from './components/PracticeModeOverlay';
 
-const DRAFT_STORAGE_KEY = 'kotoBunkafu.draft.v1';
+const DRAFT_STORAGE_KEY = 'kotoBunkafu.draft.v4';
 
 export default function App() {
   // Score state
@@ -45,12 +45,15 @@ export default function App() {
       const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return normalizeScore(parsed, createSakuraScore());
+        if (parsed?.id === 'kojo' || parsed?.title === '荒城の月') {
+          return createKojoScore();
+        }
+        return normalizeScore(parsed, createKojoScore());
       }
     } catch {
       // ignore
     }
-    return createSakuraScore();
+    return createKojoScore();
   });
 
   // Score container ref for scrolling
