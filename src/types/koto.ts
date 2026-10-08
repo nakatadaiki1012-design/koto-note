@@ -4,6 +4,15 @@
  */
 
 export const KANJI_STRINGS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '斗', '為', '巾'] as const;
+export const KANJI_STRINGS_17 = [
+  '一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
+  '十一', '十二', '十三', '十四', '十五', '十六', '十七'
+] as const;
+
+export function getStringNames(count: number = 13): readonly string[] {
+  return count === 17 ? KANJI_STRINGS_17 : KANJI_STRINGS;
+}
+
 export const KEYBOARD_ROW1 = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '^', '¥'] as const;
 export const KEYBOARD_HOME = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', ':', ']', '@'] as const;
 
@@ -65,64 +74,130 @@ export const TUNING_PRESETS: Record<string, TuningPreset> = {
     desc: '雲井調子の変化形、独特の情緒を漂わせる名調子',
     off: [0, -7, -6, -3, 0, 1, 5, 6, 9, 12, 13, 17, 18]
   },
+  hira_yon_up: {
+    name: '平調子（四を一音上げる）',
+    desc: '平調子より四を一音上げた調弦（荒城の月など、一＝D: D G A C D E♭ G A B♭ D E♭ G A）',
+    off: [0, -7, -5, -2, 0, 1, 5, 7, 8, 12, 13, 17, 19]
+  },
+  juushichi_std: {
+    name: '十七絃標準調弦',
+    desc: '宮城道雄考案の十七絃標準調弦（低音C2〜D5）',
+    off: [-24, -22, -20, -17, -15, -12, -10, -8, -5, -3, 0, 2, 4, 7, 9, 12, 14]
+  },
   custom: {
     name: 'カスタム調弦',
-    desc: '13本それぞれの音程を自由に設定',
+    desc: '弦それぞれの音程を自由に設定',
     off: [0, -7, -5, -4, 0, 1, 5, 7, 8, 12, 13, 17, 19]
   }
 };
 
-export type LeftHandOrn = 'ato' | 'hanashi' | 'hikiiro' | 'tsuki' | 'yuri';
-export type RightHandOrn = 'sukui' | 'kaki' | 'hiki' | 'trem' | 'nagashi';
+export type LeftHandOrn = 'ato' | 'hanashi' | 'hikiiro' | 'tsuki' | 'yuri' | 'pizz' | 'keshi' | 'harm';
+export type RightHandOrn =
+  | 'sukui'
+  | 'kaki'
+  | 'hiki'
+  | 'trem'
+  | 'nagashi'
+  | 'wari'
+  | 'suri'
+  | 'ren'
+  | 'chirashi'
+  | 'awase'
+  | 'haya'
+  | 'muko';
 
-export const LEFT_HAND_ORNS: LeftHandOrn[] = ['ato', 'hanashi', 'hikiiro', 'tsuki', 'yuri'];
-export const RIGHT_HAND_ORNS: RightHandOrn[] = ['sukui', 'kaki', 'hiki', 'trem', 'nagashi'];
+export const LEFT_HAND_ORNS: LeftHandOrn[] = ['ato', 'hanashi', 'hikiiro', 'tsuki', 'yuri', 'pizz', 'keshi', 'harm'];
+export const RIGHT_HAND_ORNS: RightHandOrn[] = [
+  'sukui',
+  'kaki',
+  'hiki',
+  'trem',
+  'nagashi',
+  'wari',
+  'suri',
+  'ren',
+  'chirashi',
+  'awase',
+  'haya',
+  'muko'
+];
 
 export const ORN_MARKS: Record<LeftHandOrn | RightHandOrn, string> = {
   ato: 'ア',
-  hanashi: 'ハ',
+  hanashi: '放',
   hikiiro: 'ヒ',
   tsuki: 'ツ',
   yuri: 'ユ',
+  pizz: '＋',
+  keshi: '消',
+  harm: '◇',
   sukui: 'ス',
   kaki: '掻',
   hiki: '引',
   trem: '〰',
-  nagashi: '流'
+  nagashi: '流',
+  wari: 'ワ',
+  suri: '摺',
+  ren: '連',
+  chirashi: '散',
+  awase: '合',
+  haya: 'ハ',
+  muko: '向'
 };
 
 export const ORN_LABELS: Record<string, { short: string; label: string; desc: string; key: string }> = {
-  oshi1: { short: 'オ', label: '半音押し', desc: '左手で弦を押してから弾く（半音高）', key: 'Z' },
-  oshi2: { short: 'ヲ', label: '全音押し', desc: '左手で弦を強く押してから弾く（全音高）', key: 'X' },
+  oshi1: { short: 'オ', label: '半音押し', desc: '左手で弦を押してから弾く（半音高）/ 正派「半」', key: 'Z' },
+  oshi2: { short: 'ヲ', label: '全音押し', desc: '左手で弦を強く押してから弾く（全音高）/ 正派「全」', key: 'X' },
   ato: { short: 'ア', label: '後押し', desc: '弾いてから押し上げる（余韻が上がる）', key: 'Y' },
-  hanashi: { short: 'ハ', label: '押し放し', desc: '押した音で弾き、手を放して下げる', key: 'U' },
+  hanashi: { short: '放', label: '押し放し', desc: '押した音で弾き、手を放して下げる', key: 'U' },
   hikiiro: { short: 'ヒ', label: '引き色', desc: '弾いた後に少し音を下げて戻す', key: 'I' },
   tsuki: { short: 'ツ', label: '突き色', desc: '弾いた直後に一瞬押してすぐ戻す', key: 'O' },
   yuri: { short: 'ユ', label: '揺り色', desc: '余韻を指で揺らす（ビブラート）', key: 'M' },
+  pizz: { short: '＋', label: 'ピチカート', desc: '爪をつけない指肉（左手等）ではじく', key: 'P' },
+  keshi: { short: '消', label: '消音（止め）', desc: '弾いた直後に手のひらや指で響きを止める', key: 'Q' },
+  harm: { short: '◇', label: 'ハーモニクス', desc: '絃の中央を軽く触れて弾き、倍音を鳴らす（当り音）', key: 'W' },
   sukui: { short: 'ス', label: 'スクイ', desc: '裏爪で手前にすくい上げるように弾く', key: 'C' },
   kaki: { short: '掻', label: '掻き爪', desc: '中指・薬指等で隣の弦と連続して弾く', key: 'V' },
   hiki: { short: '引', label: '引き爪', desc: '手前へ連続して引く', key: 'B' },
   trem: { short: '〰', label: 'トレモロ', desc: '爪を細かく往復させて連続打弦', key: 'N' },
-  nagashi: { short: '流', label: '流し爪', desc: '巾から順に滑らせてこの弦で止める', key: '/' }
+  nagashi: { short: '流', label: '流し爪', desc: '巾から順に滑らせてこの弦で止める', key: '/' },
+  wari: { short: 'ワ', label: '割爪', desc: '親指と人差指で隣り合う弦を割るように弾く（正派の散らし）', key: 'G' },
+  suri: { short: '摺', label: 'スリ爪', desc: '人差指と中指の爪裏で弦を擦る（風情の効果音）', key: 'H' },
+  ren: { short: '連', label: '連引き', desc: '複数の弦を連続して滑らかに流し弾く（引連・裏連・ツレ）', key: 'J' },
+  chirashi: { short: '散', label: '散らし爪', desc: '爪先で素早く弦を擦りつける', key: 'K' },
+  awase: { short: '合', label: '合わせ爪', desc: '親指と中指で2本の絃を同時に挟み弾く', key: 'E' },
+  haya: { short: 'ハ', label: '早爪', desc: '親指を連続して素早く打弦する（山田流等）', key: 'R' },
+  muko: { short: '向', label: '向う弾き', desc: '山田流丸爪で絃を前方へ押し出すように弾く', key: 'T' }
 };
 
 export interface Slot {
-  notes: number[]; // 0~12 index of string (0=一 ... 12=巾)
+  notes: number[]; // 0~12 or 0~16 index of string
   rest: boolean;
   tie: boolean;
-  oshi: number; // 0=none, 1=half (オ), 2=whole (ヲ)
+  oshi: number; // 0=none, 1=half (オ/半), 2=whole (ヲ/全)
   ato?: boolean;
   hanashi?: boolean;
   hikiiro?: boolean;
   tsuki?: boolean;
   yuri?: boolean;
+  pizz?: boolean;
+  keshi?: boolean;
+  harm?: boolean;
   sukui?: boolean;
   kaki?: boolean;
   hiki?: boolean;
   trem?: boolean;
   nagashi?: boolean;
-  finger?: number; // 1=親指, 2=人差し指, 3=中指(3)
-  repeat2?: boolean; // 2拍同じことを繰り返す記号（く / 𝄥 / 重ね）
+  wari?: boolean;
+  suri?: boolean;
+  ren?: boolean;
+  chirashi?: boolean;
+  awase?: boolean;
+  haya?: boolean;
+  muko?: boolean;
+  finger?: number; // 1=親指, 2=人差し指, 3=中指
+  repeat1?: boolean; // 1拍繰り返し記号（〃）
+  repeat2?: boolean; // 2拍繰り返し記号（く / 𝄥）
 }
 
 export interface Beat {
@@ -137,8 +212,8 @@ export interface Measure {
 
 export interface TuningConfig {
   preset: string;
-  root: number; // MIDI number for 一 (default 62 = D4)
-  custom: number[] | null; // 13 pitches if custom
+  root: number; // MIDI number for 一 (default 62 = D4, for 17-string 36 = C2)
+  custom: number[] | null;
 }
 
 export interface ViewSettings {
@@ -152,6 +227,7 @@ export interface ViewSettings {
   showKotoBoard: boolean;
   zoom: number;
   fontStyle?: 'shippori' | 'kaisei' | 'yuji' | 'klee' | 'noto';
+  schoolStyle?: 'standard' | 'seinha' | 'yamada' | 'ancient' | 'modern'; // 流派様式
 }
 
 export interface KotoScore {
@@ -163,6 +239,7 @@ export interface KotoScore {
   composer: string;
   tempo: number;
   beatsPerMeasure: 2 | 3 | 4;
+  stringCount?: 13 | 17; // 十三絃 または 十七絃
   tuning: TuningConfig;
   view: ViewSettings;
   measures: Measure[];
@@ -187,11 +264,23 @@ export function createNewSlot(): Slot {
     hikiiro: false,
     tsuki: false,
     yuri: false,
+    pizz: false,
+    keshi: false,
+    harm: false,
     sukui: false,
     kaki: false,
     hiki: false,
     trem: false,
-    nagashi: false
+    nagashi: false,
+    wari: false,
+    suri: false,
+    ren: false,
+    chirashi: false,
+    awase: false,
+    haya: false,
+    muko: false,
+    repeat1: false,
+    repeat2: false
   };
 }
 
@@ -219,11 +308,12 @@ export function getDefaultView(): ViewSettings {
     perLine: 4,
     showLyrics: false,
     showKotoBoard: false,
-    zoom: 1
+    zoom: 1,
+    schoolStyle: 'standard'
   };
 }
 
-export function createEmptyScore(): KotoScore {
+export function createEmptyScore(stringCount: 13 | 17 = 13): KotoScore {
   return {
     app: 'koto-bunkafu',
     version: 2,
@@ -232,7 +322,12 @@ export function createEmptyScore(): KotoScore {
     composer: '',
     tempo: 80,
     beatsPerMeasure: 4,
-    tuning: { preset: 'hira', root: 62, custom: null },
+    stringCount,
+    tuning: {
+      preset: stringCount === 17 ? 'juushichi_std' : 'hira',
+      root: stringCount === 17 ? 36 : 62,
+      custom: null
+    },
     view: getDefaultView(),
     measures: Array.from({ length: 8 }, () => createNewMeasure(4)),
     updatedAt: Date.now()
@@ -250,11 +345,20 @@ export const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a
 
 export function getPitches(score: KotoScore): number[] {
   const t = score.tuning;
-  if (t.preset === 'custom' && t.custom && t.custom.length === 13) {
+  const count = score.stringCount === 17 ? 17 : 13;
+  if (t.preset === 'custom' && t.custom && t.custom.length === count) {
     return t.custom.slice();
   }
-  const preset = TUNING_PRESETS[t.preset] || TUNING_PRESETS.hira;
-  return preset.off.map(o => t.root + o);
+  const preset = TUNING_PRESETS[t.preset] || (count === 17 ? TUNING_PRESETS.juushichi_std : TUNING_PRESETS.hira);
+  const pitches = preset.off.map(o => t.root + o);
+  if (pitches.length < count) {
+    // Fill remaining with octave extensions
+    while (pitches.length < count) {
+      const last = pitches[pitches.length - 1];
+      pitches.push(last + 2);
+    }
+  }
+  return pitches.slice(0, count);
 }
 
 export function getTuningLabel(score: KotoScore): string {
@@ -268,11 +372,11 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
   const base = fallback || createEmptyScore();
   if (!raw || typeof raw !== 'object') return base;
 
-  const validPreset = raw.tuning?.preset && TUNING_PRESETS[raw.tuning.preset] ? raw.tuning.preset : 'hira';
-  const root = typeof raw.tuning?.root === 'number' && !isNaN(raw.tuning.root) ? clamp(raw.tuning.root, 36, 96) : 62;
-  const custom = Array.isArray(raw.tuning?.custom) && raw.tuning.custom.length === 13 ? raw.tuning.custom.map((p: any) => Number(p) || 60) : null;
+  const stringCount: 13 | 17 = raw.stringCount === 17 ? 17 : 13;
+  const validPreset = raw.tuning?.preset && TUNING_PRESETS[raw.tuning.preset] ? raw.tuning.preset : (stringCount === 17 ? 'juushichi_std' : 'hira');
+  const root = typeof raw.tuning?.root === 'number' && !isNaN(raw.tuning.root) ? clamp(raw.tuning.root, 24, 96) : (stringCount === 17 ? 36 : 62);
+  const custom = Array.isArray(raw.tuning?.custom) && raw.tuning.custom.length === stringCount ? raw.tuning.custom.map((p: any) => Number(p) || 60) : null;
 
-  const defaultV = getDefaultView();
   const v = raw.view || {};
   const view: ViewSettings = {
     numerals: v.numerals === 'arabic' ? 'arabic' : 'kanji',
@@ -284,10 +388,12 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
     showLyrics: !!v.showLyrics,
     showKotoBoard: !!v.showKotoBoard,
     zoom: typeof v.zoom === 'number' && !isNaN(v.zoom) && v.zoom >= 0.3 ? clamp(v.zoom, 0.4, 2.0) : 1.0,
-    fontStyle: ['shippori', 'kaisei', 'yuji', 'klee', 'noto'].includes(v.fontStyle) ? v.fontStyle : 'shippori'
+    fontStyle: ['shippori', 'kaisei', 'yuji', 'klee', 'noto'].includes(v.fontStyle) ? v.fontStyle : 'shippori',
+    schoolStyle: ['standard', 'seinha', 'yamada', 'ancient', 'modern'].includes(v.schoolStyle) ? v.schoolStyle : 'standard'
   };
 
   const beatsPerMeasure = [2, 3, 4].includes(raw.beatsPerMeasure) ? raw.beatsPerMeasure : 4;
+  const maxStringIndex = stringCount - 1;
 
   const measures = Array.isArray(raw.measures) && raw.measures.length > 0 ? raw.measures.map((m: any) => {
     const rawBeats = Array.isArray(m?.beats) ? m.beats : [];
@@ -301,7 +407,7 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
         const sl = rawSlots[sIdx];
         if (sl && typeof sl === 'object') {
           slots.push({
-            notes: Array.isArray(sl.notes) ? sl.notes.filter((n: any) => typeof n === 'number' && n >= 0 && n <= 12) : [],
+            notes: Array.isArray(sl.notes) ? sl.notes.filter((n: any) => typeof n === 'number' && n >= 0 && n <= maxStringIndex) : [],
             rest: !!sl.rest,
             tie: !!sl.tie,
             oshi: [0, 1, 2].includes(sl.oshi) ? sl.oshi : 0,
@@ -310,12 +416,23 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
             hikiiro: !!sl.hikiiro,
             tsuki: !!sl.tsuki,
             yuri: !!sl.yuri,
+            pizz: !!sl.pizz,
+            keshi: !!sl.keshi,
+            harm: !!sl.harm,
             sukui: !!sl.sukui,
             kaki: !!sl.kaki,
             hiki: !!sl.hiki,
             trem: !!sl.trem,
             nagashi: !!sl.nagashi,
+            wari: !!sl.wari,
+            suri: !!sl.suri,
+            ren: !!sl.ren,
+            chirashi: !!sl.chirashi,
+            awase: !!sl.awase,
+            haya: !!sl.haya,
+            muko: !!sl.muko,
             finger: typeof sl.finger === 'number' && [1, 2, 3].includes(sl.finger) ? sl.finger : undefined,
+            repeat1: !!sl.repeat1,
             repeat2: !!sl.repeat2
           });
         } else {
@@ -340,6 +457,7 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
     composer: typeof raw.composer === 'string' ? raw.composer : '',
     tempo: typeof raw.tempo === 'number' && !isNaN(raw.tempo) && raw.tempo >= 20 ? clamp(raw.tempo, 20, 260) : 80,
     beatsPerMeasure,
+    stringCount,
     tuning: {
       preset: validPreset,
       root,

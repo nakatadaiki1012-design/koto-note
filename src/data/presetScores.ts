@@ -149,34 +149,45 @@ export function createKojoScore(): KotoScore {
   s.id = 'kojo';
   s.title = '荒城の月';
   s.subtitle = '土井晩翠 作詞 / 滝廉太郎 作曲';
-  s.composer = '滝廉太郎';
+  s.composer = '滝廉太郎 作曲';
   s.tempo = 68;
   s.beatsPerMeasure = 4;
-  s.tuning = { preset: 'kumoi', root: 62, custom: null }; // 雲井調子 (一=D)
+  s.tuning = { preset: 'hira_yon_up', root: 62, custom: null }; // 平調子より四を一音上げる (一=D)
 
-  // 雲井調子（D G A♭ C D E♭ G A♭ C D E♭ G A♭）での正確なメロディ:
-  // 春高楼の花の宴:
-  // 「はる」七(ミ) 八(ラ) 「こう」九(シ) 八(ラ) 「ろうの」七(ミ) 六(レ) 七(ミ) -
-  // 「はなの」五(シ) 六(レ) 七(ミ) 六(レ) 「えん」五(シ) - - -
-  // 「めぐる」七(ミ) 八(ラ) 九(シ) 八(ラ) 「さかずき」七(ミ) 六(レ) 七(ミ) -
-  // 「かげさして」五(シ) 六(レ) 七(ミ) 六(レ) 「-」五(シ) - - ○
+  // 写真の文化譜通りの正確な16小節（各小節4拍）:
+  // 1: 五 - 五 -  (はるこ / うろうの)
+  // 2: 七 - 七 -  (はなのえ / ん)
+  // 3: 八 - 八 -  (めぐる / さかずき)
+  // 4: 九 - 九 -  (かげさ / して)
+  // 5: 七 - 七 -  (ちよの / まつが)
+  // 6: 六 - 五 -  (えもわ / けいで)
+  // 7: 四 - 三 -  (むかし / のひかり)
+  // 8: ○ ○ ○ ○  (いまー / ー)
+  // 9: 六 - 六 -  (あきじん / ぐのしも)
+  // 10: 四 - 四 -  (のおも / てみせて)
+  // 11: 五 - 五 -  (うずく / まるけい)
+  // 12: △ - 二 -  (こりつ / のつるぎ)
+  // 13: 七 - 七 -  (にねん / ごしのあ)
+  // 14: 八 - 九 -  (きふく / のあらし)
+  // 15: 十 - 斗 -  (よはの / つきは)
+  // 16: 巾 - ○ ○ ○  (むかし / のひかり)
   const bars = [
-    '七 八 九 八',
-    '七 六 七 -',
-    '五 六 七 六',
-    '五 - - -',
-    '七 八 九 八',
-    '七 六 七 -',
-    '五 六 七 六',
-    '五 - - ○',
-    '九 十 斗 十',
-    '九 八 九 -',
-    '七 八 九 八',
-    '七 - - -',
-    '七 八 九 八',
-    '七 六 七 -',
-    '五 六 七 六',
-    '五 - - ○'
+    '五 - 五 -',
+    '七 - 七 -',
+    '八 - 八 -',
+    '九 - 九 -',
+    '七 - 七 -',
+    '六 - 五 -',
+    '四 - 三 -',
+    '○ ○ ○ ○',
+    '六 - 六 -',
+    '四 - 四 -',
+    '五 - 五 -',
+    '△ - 二 -',
+    '七 - 七 -',
+    '八 - 九 -',
+    '十 - 斗 -',
+    '巾 - ○ ○'
   ];
 
   const lyrics = [
@@ -184,51 +195,39 @@ export function createKojoScore(): KotoScore {
     'は な の えん',
     'めぐ る さか ず',
     'き',
-    'かげ さし て',
     'ち よ の ま',
     'つ が え も',
     'わ け い で',
     'む か し の',
-    'ひ か り い',
-    'ま い ず こ',
-    'へ',
-    'てん じょう か',
-    'げ は か',
-    'わ ら ね ど',
-    'も'
+    'あ き じん ぐ',
+    'の し も の お',
+    'も て み せ て',
+    'う ず く ま',
+    'る け い こ',
+    'り つ の つ',
+    'る ぎ に ね ん',
+    'ご し の あ'
   ];
 
-  s.measures = bars.map((bar, mIdx) => ({
-    beats: bar.split(' ').map((tok, bIdx) => {
-      let b: any;
-      if (tok === '-') {
-        b = createNewBeat(1);
-      } else if (tok === '○') {
-        b = createNewBeat(1);
+  s.measures = bars.map((bar) => ({
+    beats: bar.split(' ').map((tok) => {
+      if (tok === '-') return createNewBeat(1);
+      if (tok === '○') {
+        const b = createNewBeat(1);
         b.slots[0].rest = true;
-      } else {
-        const chars = [...tok];
-        b = createNewBeat(chars.length as 1 | 2 | 3 | 4);
-        chars.forEach((c, i) => {
-          const stringIdx = KANJI_STRINGS.indexOf(c as any);
-          if (stringIdx >= 0) {
-            b.slots[i].notes = [stringIdx];
-          }
-        });
+        return b;
       }
+      const chars = [...tok];
+      const b = createNewBeat(chars.length as 1 | 2 | 3 | 4);
+      chars.forEach((c, i) => {
+        const stringIdx = KANJI_STRINGS.indexOf(c as any);
+        if (stringIdx >= 0) {
+          b.slots[i].notes = [stringIdx];
+        }
+      });
       return b;
     })
   }));
-
-  // 歌詞も正確にセット
-  lyrics.forEach((line, mIdx) => {
-    const words = line.split(' ');
-    words.forEach((w, bIdx) => {
-      if (s.measures[mIdx]?.beats[bIdx]) {
-        s.measures[mIdx].beats[bIdx].lyrics = w;
-      }
-    });
-  });
 
   return s;
 }

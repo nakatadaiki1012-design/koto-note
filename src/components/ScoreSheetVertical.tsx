@@ -8,6 +8,7 @@ import {
   KotoScore,
   CursorPosition,
   KANJI_STRINGS,
+  getStringNames,
   LEFT_HAND_ORNS,
   RIGHT_HAND_ORNS,
   ORN_MARKS,
