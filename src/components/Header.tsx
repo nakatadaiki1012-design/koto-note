@@ -57,10 +57,11 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="flex flex-col gap-1.5 rounded-xl border border-stone-200/90 bg-white/95 px-2.5 sm:px-3 py-1 sm:py-1.5 shadow-2xs backdrop-blur-md no-print transition-all">
       {/* Top row: Brand & Primary Modals */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5" title="琴譜エディタ (Koto Note)">
           <div className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-800 to-amber-950 text-white shadow-xs">
-            <span className="font-score font-extrabold text-xs sm:text-sm">箏</span>
+            <span className="font-score font-extrabold text-xs sm:text-sm">琴</span>
           </div>
+          <span className="font-score font-bold text-xs text-stone-700 hidden md:inline">琴譜エディタ</span>
           <div className="flex items-center gap-1">
             <input
               type="text"
@@ -215,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({
                     view.layout === 'vertical' ? 'bg-white text-stone-900 shadow-2xs font-bold' : 'text-stone-500 hover:text-stone-900'
                   }`}
                 >
-                  縦書き文化譜
+                  縦書き琴譜
                 </button>
                 <button
                   onClick={() => onUpdateView({ layout: 'horizontal' })}
@@ -285,7 +286,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onChange={e => onUpdateView({ fontStyle: e.target.value as any })}
                   className="rounded-md border border-stone-300 bg-white px-1.5 py-0.5 text-xs font-medium text-stone-700 cursor-pointer"
                 >
-                  <option value="shippori">しっぽり明朝（正統文化譜）</option>
+                  <option value="shippori">しっぽり明朝（正統琴譜）</option>
                   <option value="kaisei">解星デコール（優美）</option>
                   <option value="yuji">游築・筆文字（古典風格）</option>
                   <option value="klee">クレー（教科書筆記）</option>

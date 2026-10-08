@@ -20,7 +20,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between border-b border-stone-200 pb-3">
           <div className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-indigo-700" />
-            <h2 className="text-xl font-bold font-score text-stone-900">使い方と文化譜の手引き</h2>
+            <h2 className="text-xl font-bold font-score text-stone-900">使い方と琴譜の手引き</h2>
           </div>
           <button
             onClick={onClose}
@@ -34,11 +34,11 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           {/* Bunkafu Concept */}
           <div className="rounded-xl border border-stone-200 bg-white p-4">
             <h3 className="font-bold text-stone-900 flex items-center gap-1.5 mb-2 font-score">
-              <Info className="h-4 w-4 text-amber-700" /> 文化譜（数字譜）の読み方と特徴
+              <Info className="h-4 w-4 text-amber-700" /> 琴譜（数字譜・伝統譜）の読み方と特徴
             </h3>
             <ul className="list-disc list-inside space-y-1.5 text-xs text-stone-600 leading-relaxed">
               <li>
-                <strong>縦書き（右から左）</strong>: 日本の伝統的な文化譜の形式です。列が右から左に進み、各列に小節が上から下へ並びます。
+                <strong>縦書き（右から左）</strong>: 日本の伝統的な琴譜（文化譜）の形式です。列が右から左に進み、各列に小節が上から下へ並びます。
               </li>
               <li>
                 <strong>十三の弦</strong>: 一、二、三、四、五、六、七、八、九、十、斗（とう）、為（い）、巾（きん）の13本です。

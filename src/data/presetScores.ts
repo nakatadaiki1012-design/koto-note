@@ -234,14 +234,5 @@ export const PRESET_SONGS: PresetSongInfo[] = [
     description: '箏の代表曲。初心者から親しまれる典雅な旋律。平調子（一＝D）。',
     tuningName: '平調子',
     score: createSakuraScore
-  },
-  {
-    id: 'rokudan',
-    title: '六段の調（初段）',
-    subtitle: '八橋検校 作曲',
-    composer: '八橋検校',
-    description: '箏曲の最高峰の古典本曲。静寂から始まる格式ある格調高い調べ。',
-    tuningName: '平調子',
-    score: createRokudanScore
   }
 ];

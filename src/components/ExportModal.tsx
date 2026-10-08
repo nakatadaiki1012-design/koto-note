@@ -42,7 +42,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const handleExportJson = () => {
     const jsonStr = JSON.stringify(score, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
-    downloadBlob(blob, `${score.title || '文化譜'}.json`);
+    downloadBlob(blob, `${score.title || '琴譜'}.json`);
   };
 
   const handleCopyJson = () => {
@@ -54,7 +54,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   const handleExportMidi = () => {
     const midiBlob = exportScoreToMidi(score);
-    downloadBlob(midiBlob, `${score.title || '文化譜'}.mid`);
+    downloadBlob(midiBlob, `${score.title || '琴譜'}.mid`);
   };
 
   const handleExportWav = async () => {
@@ -62,7 +62,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       setIsRenderingWav(true);
       setWavProgress(10);
       const wavBlob = await exportScoreToWav(score, p => setWavProgress(p));
-      downloadBlob(wavBlob, `${score.title || '文化譜'}.wav`);
+      downloadBlob(wavBlob, `${score.title || '琴譜'}.wav`);
     } catch (err) {
       console.error('WAV export error:', err);
       alert('音声の書き出しに失敗しました');
@@ -79,7 +79,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       try {
         const parsed = JSON.parse(ev.target?.result as string);
         if (!parsed || !Array.isArray(parsed.measures)) {
-          throw new Error('文化譜のデータ形式ではありません');
+          throw new Error('琴譜のデータ形式ではありません');
         }
         onImportScore(parsed);
         onClose();
