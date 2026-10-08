@@ -131,11 +131,22 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
     ));
   };
 
+  const fontClass =
+    score.view.fontStyle === 'kaisei'
+      ? 'font-kaisei'
+      : score.view.fontStyle === 'yuji'
+      ? 'font-yuji'
+      : score.view.fontStyle === 'klee'
+      ? 'font-klee'
+      : score.view.fontStyle === 'noto'
+      ? 'font-noto'
+      : 'font-shippori';
+
   return (
     <div
       ref={containerRef}
       style={{ zoom: score.view.zoom }}
-      className={`relative inline-flex flex-row-reverse flex-nowrap items-start gap-x-0 select-none font-score text-stone-900 transition-all min-w-max pb-4 ${
+      className={`relative inline-flex flex-row-reverse flex-nowrap items-start gap-x-0 select-none ${fontClass} text-stone-900 transition-all min-w-max pb-4 ${
         isRubyOn ? 'ruby-active' : ''
       }`}
     >
@@ -463,8 +474,8 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                               />
                             </div>
                           ) : div === 2 ? (
-                            /* 8th notes (♪♪): Two equal halves */
-                            <div className="flex flex-col h-full divide-y divide-stone-900">
+                            /* 8th notes (♪♪): Two equal halves with clean standard line */
+                            <div className="flex flex-col h-full divide-y divide-stone-500">
                               {beat.slots.map((sl, sIdx) => {
                                 const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
                                 const isMultiSel = selectedSlotKeys?.has(slotKey);

@@ -151,6 +151,7 @@ export interface ViewSettings {
   showLyrics: boolean;
   showKotoBoard: boolean;
   zoom: number;
+  fontStyle?: 'shippori' | 'kaisei' | 'yuji' | 'klee' | 'noto';
 }
 
 export interface KotoScore {
@@ -282,7 +283,8 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
     perLine: typeof v.perLine === 'number' && v.perLine > 0 ? clamp(Math.round(v.perLine), 1, 8) : 4,
     showLyrics: !!v.showLyrics,
     showKotoBoard: !!v.showKotoBoard,
-    zoom: typeof v.zoom === 'number' && !isNaN(v.zoom) && v.zoom >= 0.3 ? clamp(v.zoom, 0.4, 2.0) : 1.0
+    zoom: typeof v.zoom === 'number' && !isNaN(v.zoom) && v.zoom >= 0.3 ? clamp(v.zoom, 0.4, 2.0) : 1.0,
+    fontStyle: ['shippori', 'kaisei', 'yuji', 'klee', 'noto'].includes(v.fontStyle) ? v.fontStyle : 'shippori'
   };
 
   const beatsPerMeasure = [2, 3, 4].includes(raw.beatsPerMeasure) ? raw.beatsPerMeasure : 4;

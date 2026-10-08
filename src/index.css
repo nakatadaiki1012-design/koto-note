@@ -11,6 +11,26 @@
   font-family: var(--f-score);
 }
 
+.font-shippori {
+  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+}
+
+.font-kaisei {
+  font-family: "Kaisei Decol", "Shippori Mincho B1", serif;
+}
+
+.font-yuji {
+  font-family: "Yuji Boku", "Shippori Mincho B1", serif;
+}
+
+.font-klee {
+  font-family: "Klee One", "Zen Kaku Gothic New", sans-serif;
+}
+
+.font-noto {
+  font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif;
+}
+
 .font-ui {
   font-family: var(--f-ui);
 }

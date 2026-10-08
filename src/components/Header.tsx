@@ -276,6 +276,22 @@ export const Header: React.FC<HeaderProps> = ({
                   ))}
                 </select>
               </div>
+
+              {/* Font selection */}
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-semibold text-stone-400">書体:</span>
+                <select
+                  value={view.fontStyle || 'shippori'}
+                  onChange={e => onUpdateView({ fontStyle: e.target.value as any })}
+                  className="rounded-md border border-stone-300 bg-white px-1.5 py-0.5 text-xs font-medium text-stone-700 cursor-pointer"
+                >
+                  <option value="shippori">しっぽり明朝（正統文化譜）</option>
+                  <option value="kaisei">解星デコール（優美）</option>
+                  <option value="yuji">游築・筆文字（古典風格）</option>
+                  <option value="klee">クレー（教科書筆記）</option>
+                  <option value="noto">Noto Serif（標準明朝）</option>
+                </select>
+              </div>
             </div>
 
             {/* Right: Koto Board, Lyrics, Zoom */}

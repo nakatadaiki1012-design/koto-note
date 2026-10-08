@@ -65,6 +65,7 @@ export default function App() {
   const [cursor, setCursor] = useState<CursorPosition>({ m: 0, b: 0, s: 0, low: false });
   const [selectedRange, setSelectedRange] = useState<[number, number] | null>(null);
   const [selAnchor, setSelAnchor] = useState<number | null>(null);
+  const [slotAnchor, setSlotAnchor] = useState<{ m: number; b: number; s: number } | null>(null);
   const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
   const [inputDiv, setInputDiv] = useState<1 | 2 | 3 | 4>(1);
   const [isChordMode, setIsChordMode] = useState(false);
@@ -802,11 +803,35 @@ export default function App() {
 
   // Click on Slot in Score (Supports Excel-like multi-cell selection with Shift / Ctrl)
   const handleSlotClick = useCallback(
-    (mIdx: number, bIdx: number, sIdx: number, low?: boolean, modifierKey?: boolean) => {
+    (mIdx: number, bIdx: number, sIdx: number, low?: boolean, modifierKey?: boolean, shiftKey?: boolean) => {
       const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
 
-      if (modifierKey) {
-        // Toggle or add to multi-cell selection set
+      if (shiftKey && slotAnchor) {
+        // Excel-like Shift+Click: select rectangular/continuous range of slots between slotAnchor and target
+        const startM = Math.min(slotAnchor.m, mIdx);
+        const endM = Math.max(slotAnchor.m, mIdx);
+        const newSet = new Set<string>();
+
+        for (let m = startM; m <= endM; m++) {
+          const meas = score.measures[m];
+          if (!meas) continue;
+          meas.beats.forEach((b, bI) => {
+            b.slots.forEach((_, sI) => {
+              // Linear index check between anchor and current target
+              const linearAnchor = slotAnchor.m * 1000 + slotAnchor.b * 10 + slotAnchor.s;
+              const linearCurrent = mIdx * 1000 + bIdx * 10 + sIdx;
+              const linearThis = m * 1000 + bI * 10 + sI;
+              const minL = Math.min(linearAnchor, linearCurrent);
+              const maxL = Math.max(linearAnchor, linearCurrent);
+              if (linearThis >= minL && linearThis <= maxL) {
+                newSet.add(`${m}-${bI}-${sI}`);
+              }
+            });
+          });
+        }
+        setSelectedSlotKeys(newSet);
+      } else if (modifierKey) {
+        // Excel-like Ctrl / Cmd+Click: toggle individual cell in selection set
         setSelectedSlotKeys(prev => {
           const next = new Set(prev);
           if (next.has(slotKey)) {
@@ -816,11 +841,13 @@ export default function App() {
           }
           return next;
         });
+        setSlotAnchor({ m: mIdx, b: bIdx, s: sIdx });
       } else {
-        // Single selection resets multi-select
+        // Single normal click resets multi-select
         setSelectedSlotKeys(new Set());
         setSelectedRange(null);
         setSelAnchor(null);
+        setSlotAnchor({ m: mIdx, b: bIdx, s: sIdx });
       }
 
       setCursor({ m: mIdx, b: bIdx, s: sIdx, low });
@@ -831,7 +858,7 @@ export default function App() {
         previewSlot(sl);
       }
     },
-    [score, isPlaying, previewSlot]
+    [score, slotAnchor, isPlaying, previewSlot]
   );
 
   const handleMeasureClick = useCallback(
