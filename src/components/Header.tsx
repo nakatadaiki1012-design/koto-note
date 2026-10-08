@@ -19,7 +19,8 @@ import {
   ChevronUp,
   Settings2,
   Maximize2,
-  Printer
+  Printer,
+  BookOpen
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -31,6 +32,7 @@ interface HeaderProps {
   onOpenExport: () => void;
   onOpenHelp: () => void;
   onOpenPracticeMode?: () => void;
+  onOpenNoteArticle?: () => void;
   onPrint?: () => void;
 }
 
@@ -43,6 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExport,
   onOpenHelp,
   onOpenPracticeMode,
+  onOpenNoteArticle,
   onPrint
 }) => {
   const [showOptions, setShowOptions] = useState(false);
@@ -124,6 +127,17 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Printer className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-stone-700 shrink-0" />
               <span>印刷</span>
+            </button>
+          )}
+
+          {onOpenNoteArticle && (
+            <button
+              onClick={onOpenNoteArticle}
+              className="flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50/90 hover:bg-amber-100 text-amber-950 px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-bold shadow-2xs cursor-pointer shrink-0 whitespace-nowrap transition-colors"
+              title="NOTE投稿用記事 ＆ スクリーンショット作成（開発中）"
+            >
+              <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-800 shrink-0" />
+              <span>NOTE記事</span>
             </button>
           )}
 

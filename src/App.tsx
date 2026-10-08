@@ -35,6 +35,7 @@ import { ScoreLibraryModal } from './components/ScoreLibraryModal';
 import { ExportModal } from './components/ExportModal';
 import { HelpModal } from './components/HelpModal';
 import { PracticeModeOverlay } from './components/PracticeModeOverlay';
+import { NoteArticleModal } from './components/NoteArticleModal';
 
 const DRAFT_STORAGE_KEY = 'kotoBunkafu.draft.v4';
 
@@ -90,6 +91,7 @@ export default function App() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPracticeMode, setIsPracticeMode] = useState(false);
+  const [isNoteArticleOpen, setIsNoteArticleOpen] = useState(false);
 
   // Clipboard for measures
   const clipboardRef = useRef<any[] | null>(null);
@@ -1168,6 +1170,7 @@ export default function App() {
           onOpenExport={() => setIsExportOpen(true)}
           onOpenHelp={() => setIsHelpOpen(true)}
           onOpenPracticeMode={() => setIsPracticeMode(true)}
+          onOpenNoteArticle={() => setIsNoteArticleOpen(true)}
           onPrint={() => window.print()}
         />
 
@@ -1342,9 +1345,16 @@ export default function App() {
           setScore(s);
           setCursor({ m: 0, b: 0, s: 0 });
         }}
+        onOpenNoteArticle={() => setIsNoteArticleOpen(true)}
       />
 
       <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+
+      <NoteArticleModal
+        score={score}
+        isOpen={isNoteArticleOpen}
+        onClose={() => setIsNoteArticleOpen(false)}
+      />
 
       {/* Zen Performance & Practice Mode Overlay */}
       {isPracticeMode && (

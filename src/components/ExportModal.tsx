@@ -7,20 +7,22 @@ import React, { useState } from 'react';
 import { KotoScore } from '../types/koto';
 import { exportScoreToWav } from '../utils/wavExport';
 import { exportScoreToMidi } from '../utils/midiExport';
-import { Download, Upload, Music, Printer, FileText, CheckCircle2, Loader2 } from 'lucide-react';
+import { Download, Upload, Music, Printer, FileText, CheckCircle2, Loader2, BookOpen } from 'lucide-react';
 
 interface ExportModalProps {
   score: KotoScore;
   isOpen: boolean;
   onClose: () => void;
   onImportScore: (score: KotoScore) => void;
+  onOpenNoteArticle?: () => void;
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({
   score,
   isOpen,
   onClose,
-  onImportScore
+  onImportScore,
+  onOpenNoteArticle
 }) => {
   const [isRenderingWav, setIsRenderingWav] = useState(false);
   const [wavProgress, setWavProgress] = useState(0);
@@ -192,11 +194,39 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </p>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-xs font-semibold text-white hover:bg-stone-800"
+              className="flex items-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-xs font-semibold text-white hover:bg-stone-800 cursor-pointer"
             >
               <Printer className="h-4 w-4" /> 印刷プレビューを開く (Ctrl+P)
             </button>
           </div>
+
+          {/* NOTE Article & Screenshot Generator */}
+          {onOpenNoteArticle && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-xs font-bold text-amber-950 flex items-center gap-1.5 mb-1">
+                    <BookOpen className="h-4 w-4 text-amber-800" /> NOTE投稿用記事 ＆ スクショ作成
+                  </h3>
+                  <p className="text-xs text-amber-900/80 mb-3">
+                    note.com投稿用の記事ドラフト全文のワンクリックコピー、および見出し画像（1200×630）・縦書き文化譜スクショのPNG出力を行えます。
+                  </p>
+                </div>
+                <span className="rounded bg-amber-200/90 text-amber-900 text-[10px] font-bold px-2 py-0.5 shrink-0">
+                  開発中
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenNoteArticle();
+                }}
+                className="flex items-center gap-2 rounded-lg bg-amber-800 hover:bg-amber-700 px-4 py-2 text-xs font-bold text-white shadow-2xs cursor-pointer transition-colors"
+              >
+                <BookOpen className="h-4 w-4" /> NOTE投稿用記事・画像を開く
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex justify-end border-t border-stone-200 pt-4">
