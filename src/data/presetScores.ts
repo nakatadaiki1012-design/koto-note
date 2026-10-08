@@ -150,82 +150,68 @@ export function createKojoScore(): KotoScore {
   s.title = '荒城の月';
   s.subtitle = '土井晩翠 作詞 / 滝廉太郎 作曲';
   s.composer = '滝廉太郎 作曲';
-  s.tempo = 68;
+  s.tempo = 72;
   s.beatsPerMeasure = 4;
   s.tuning = { preset: 'hira_yon_up', root: 62, custom: null }; // 平調子より四を一音上げる (一=D)
 
-  // ユーザー様ご指定の正しい荒城の月の旋律・節回し（各小節4拍）:
-  // 1: 五五七八 九八七
-  // 2: 六六五四 五...
-  // 3: 五五七八 九八七
-  // 4: 六四五五 二...
-  // 5: 九九八七 斗斗十...
-  // 6: 四五六六 五...
-  // 7: 五五七八 九八七
-  // 8: 六四五五 二... (または終止)
+  // ユーザー様ご指定の正しい荒城の月の旋律・節回し（各小節4拍、1文字1拍、○は休符）:
   const bars = [
-    '五五七八',
-    '九八七 -',
-    '六六五四',
-    '五 - - -',
-    '五五七八',
-    '九八七 -',
-    '六四五五',
-    '二 - - -',
-    '九九八七',
-    '斗斗十 -',
-    '四五六六',
-    '五 - - -',
-    '五五七八',
-    '九八七 -',
-    '六四五五',
-    '二 - - ○'
+    '五 五 七 八',
+    '九 八 七 ○',
+    '六 六 五 四',
+    '五 ○ ○ ○',
+    '五 五 七 八',
+    '九 八 七 ○',
+    '六 四 五 五',
+    '二 ○ ○ ○',
+    '九 九 八 七',
+    '斗 斗 十 ○',
+    '四 五 六 六',
+    '五 ○ ○ ○',
+    '五 五 七 八',
+    '九 八 七 ○',
+    '六 四 五 五',
+    '二 ○ ○ ○'
   ];
 
   const lyrics = [
-    'はるこうろうの',
-    '',
-    'はなのえん',
-    '',
-    'めぐるさかずき',
-    '',
-    'かげさして',
-    '',
-    'ちよのまつがえ',
-    '',
-    'もわけいで',
-    '',
-    'むかしのひかり',
-    '',
-    'まいずこへ',
-    ''
+    'は る こ う',
+    'ろ う の ○',
+    'は な の え',
+    'ん ○ ○ ○',
+    'め ぐ る さ',
+    'か ず き ○',
+    'か げ さ し',
+    'て ○ ○ ○',
+    'ち よ の ま',
+    'つ が え ○',
+    'も わ け い',
+    'で ○ ○ ○',
+    'む か し の',
+    'ひ か り ○',
+    'ま い ず こ',
+    'へ ○ ○ ○'
   ];
 
   s.measures = bars.map((bar, mIdx) => ({
-    beats: bar.split(' ').map((tok) => {
-      if (tok === '-') return createNewBeat(1);
+    beats: bar.split(' ').map((tok, bIdx) => {
+      const b = createNewBeat(1);
       if (tok === '○') {
-        const b = createNewBeat(1);
         b.slots[0].rest = true;
-        return b;
-      }
-      const chars = [...tok];
-      const b = createNewBeat(chars.length as 1 | 2 | 3 | 4);
-      chars.forEach((c, i) => {
-        const stringIdx = KANJI_STRINGS.indexOf(c as any);
+      } else {
+        const stringIdx = KANJI_STRINGS.indexOf(tok as any);
         if (stringIdx >= 0) {
-          b.slots[i].notes = [stringIdx];
+          b.slots[0].notes = [stringIdx];
         }
-      });
+      }
+
+      const lyricWord = lyrics[mIdx]?.split(' ')[bIdx];
+      if (lyricWord && lyricWord !== '○') {
+        b.lyrics = lyricWord;
+      }
       return b;
     })
   }));
-
-  lyrics.forEach((line, mIdx) => {
-    if (line && s.measures[mIdx]?.beats[0]) {
-      s.measures[mIdx].beats[0].lyrics = line;
-    }
-  });
 
   return s;
 }
