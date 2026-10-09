@@ -46,9 +46,8 @@ export function createSakuraScore(): KotoScore {
   s.measures = bars.map((bar, mIdx) => ({
     beats: bar.split(' ').map((tok) => {
       if (tok === '-') {
-        const b = createNewBeat(2);
-        b.slots[0].tie = true;
-        return b;
+        // 延音の縦棒「|」は表示せず空白にする
+        return createNewBeat(2);
       }
       if (tok === '○') {
         const b = createNewBeat(2);
