@@ -45,13 +45,25 @@ export function createSakuraScore(): KotoScore {
 
   s.measures = bars.map((bar, mIdx) => ({
     beats: bar.split(' ').map((tok) => {
-      if (tok === '-') return createNewBeat(1);
+      if (tok === '-') {
+        const b = createNewBeat(2);
+        b.slots[0].tie = true;
+        return b;
+      }
       if (tok === '○') {
-        const b = createNewBeat(1);
+        const b = createNewBeat(2);
         b.slots[0].rest = true;
         return b;
       }
       const chars = [...tok];
+      if (chars.length === 1) {
+        const b = createNewBeat(2);
+        const stringIdx = KANJI_STRINGS.indexOf(chars[0] as any);
+        if (stringIdx >= 0) {
+          b.slots[0].notes = [stringIdx];
+        }
+        return b;
+      }
       const b = createNewBeat(chars.length as 1 | 2 | 3 | 4);
       chars.forEach((c, i) => {
         const stringIdx = KANJI_STRINGS.indexOf(c as any);
@@ -109,13 +121,25 @@ export function createRokudanScore(): KotoScore {
 
   s.measures = bars.map(bar => ({
     beats: bar.split(' ').map(tok => {
-      if (tok === '-') return createNewBeat(1);
+      if (tok === '-') {
+        const b = createNewBeat(2);
+        b.slots[0].tie = true;
+        return b;
+      }
       if (tok === '○') {
-        const b = createNewBeat(1);
+        const b = createNewBeat(2);
         b.slots[0].rest = true;
         return b;
       }
       const chars = [...tok];
+      if (chars.length === 1) {
+        const b = createNewBeat(2);
+        const stringIdx = KANJI_STRINGS.indexOf(chars[0] as any);
+        if (stringIdx >= 0) {
+          b.slots[0].notes = [stringIdx];
+        }
+        return b;
+      }
       const b = createNewBeat(chars.length as 1 | 2 | 3 | 4);
       chars.forEach((c, i) => {
         const stringIdx = KANJI_STRINGS.indexOf(c as any);
@@ -195,7 +219,7 @@ export function createKojoScore(): KotoScore {
 
   s.measures = bars.map((bar, mIdx) => ({
     beats: bar.split(' ').map((tok, bIdx) => {
-      const b = createNewBeat(1);
+      const b = createNewBeat(2);
       if (tok === '○') {
         b.slots[0].rest = true;
       } else {

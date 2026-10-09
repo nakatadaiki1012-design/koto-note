@@ -46,32 +46,53 @@
 }
 
 @page {
-  size: A4 portrait;
-  margin: 10mm;
+  size: auto;
+  margin: 0mm; /* Removes default browser header (URL/title) and footer (date/page number) */
 }
 
 @media print {
   html, body {
     background-color: #ffffff !important;
+    background: #ffffff !important;
     color: #000000 !important;
     padding: 0 !important;
     margin: 0 !important;
-    font-size: 12pt;
+    font-size: 11pt;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  .no-print {
+
+  /* Force all app outer containers to pure white without gray background or shadows */
+  #root,
+  .min-h-screen,
+  div[class*="bg-[#edece8]"],
+  div[class*="bg-stone"] {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .no-print,
+  header,
+  nav,
+  aside {
     display: none !important;
   }
+
   main {
     box-shadow: none !important;
     border: none !important;
-    background: transparent !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
     max-height: none !important;
     overflow: visible !important;
-    padding: 0 !important;
+    padding: 12mm 15mm !important;
     margin: 0 auto !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
   }
+
   /* Prevent measure blocks and columns from breaking awkwardly */
   .score-column {
     page-break-inside: avoid;

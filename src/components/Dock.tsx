@@ -229,10 +229,10 @@ export const Dock: React.FC<DockProps> = ({
         {/* Center: Note Duration Pickers & Rest/Tie */}
         <div className="flex items-center gap-0.5 sm:gap-1">
           {[
-            { div: 1, label: '♩', title: '4分音符 (Q)' },
-            { div: 2, label: '♪♪', title: '8分音符 (W)' },
-            { div: 3, label: '3連', title: '3連符 (E)' },
-            { div: 4, label: '♬', title: '16分音符 (R)' }
+            { div: 1, label: '♩', title: '4分音符 (1拍1音 / Qキー)' },
+            { div: 2, label: '♪♪', title: '8分音符 (1マスを2音に分割 / Wキー)' },
+            { div: 3, label: '3連', title: '3連符 (1マスを3音に分割 / Eキー)' },
+            { div: 4, label: '♬', title: '16分音符 (1マスを4音に分割 / Rキー)' }
           ].map(opt => (
             <button
               key={opt.div}
@@ -428,6 +428,7 @@ export const Dock: React.FC<DockProps> = ({
                         ? 'bg-amber-400 text-stone-900 border-amber-500 font-bold'
                         : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'
                     }`}
+                    title="和音モード: ONにすると同じマスに複数の弦を重ねて入力できます（Shiftキーを押しながら弦入力も可）"
                   >
                     和音モード {isChordMode ? 'ON' : 'OFF'}
                   </button>

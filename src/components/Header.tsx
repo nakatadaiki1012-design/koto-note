@@ -20,7 +20,7 @@ import {
   Settings2,
   Maximize2,
   Printer,
-  BookOpen
+  FilePlus
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -32,7 +32,7 @@ interface HeaderProps {
   onOpenExport: () => void;
   onOpenHelp: () => void;
   onOpenPracticeMode?: () => void;
-  onOpenNoteArticle?: () => void;
+  onOpenNewScoreWizard?: () => void;
   onPrint?: () => void;
 }
 
@@ -45,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExport,
   onOpenHelp,
   onOpenPracticeMode,
-  onOpenNoteArticle,
+  onOpenNewScoreWizard,
   onPrint
 }) => {
   const [showOptions, setShowOptions] = useState(false);
@@ -81,6 +81,17 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Modal & Options Buttons */}
         <div className="flex items-center gap-1 shrink-0">
+          {onOpenNewScoreWizard && (
+            <button
+              onClick={onOpenNewScoreWizard}
+              className="flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50/90 hover:bg-emerald-100 text-emerald-950 px-2 py-0.5 sm:py-1 text-xs font-bold shadow-2xs cursor-pointer shrink-0 whitespace-nowrap transition-colors"
+              title="空白の楽譜を新しく作成する (Ctrl+N)"
+            >
+              <FilePlus className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-700 shrink-0" />
+              <span>新規楽譜</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenLibrary}
             className="flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 sm:py-1 text-xs font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer shrink-0 whitespace-nowrap"
@@ -127,17 +138,6 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Printer className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-stone-700 shrink-0" />
               <span>印刷</span>
-            </button>
-          )}
-
-          {onOpenNoteArticle && (
-            <button
-              onClick={onOpenNoteArticle}
-              className="flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50/90 hover:bg-amber-100 text-amber-950 px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-bold shadow-2xs cursor-pointer shrink-0 whitespace-nowrap transition-colors"
-              title="NOTE投稿用記事 ＆ スクリーンショット作成（開発中）"
-            >
-              <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-800 shrink-0" />
-              <span>NOTE記事</span>
             </button>
           )}
 
@@ -305,6 +305,20 @@ export const Header: React.FC<HeaderProps> = ({
                   <option value="yuji">游築・筆文字（古典風格）</option>
                   <option value="klee">クレー（教科書筆記）</option>
                   <option value="noto">Noto Serif（標準明朝）</option>
+                </select>
+              </div>
+
+              {/* 16th note layout (縦4段: 8分音符より縦に小さく表示 / 2x2分割) */}
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-semibold text-stone-400">16分:</span>
+                <select
+                  value={view.sixteenthLayout || 'vertical'}
+                  onChange={e => onUpdateView({ sixteenthLayout: e.target.value as any })}
+                  className="rounded-md border border-stone-300 bg-white px-1.5 py-0.5 text-xs font-medium text-stone-700 cursor-pointer"
+                  title="16分音符の配置方式"
+                >
+                  <option value="vertical">縦4段（8分より縦に小さい）</option>
+                  <option value="grid">2×2（横分割）</option>
                 </select>
               </div>
             </div>

@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   KotoScore,
+  Slot,
   CursorPosition,
   KANJI_STRINGS,
   KEYBOARD_ROW1,
@@ -35,26 +36,34 @@ import { ScoreLibraryModal } from './components/ScoreLibraryModal';
 import { ExportModal } from './components/ExportModal';
 import { HelpModal } from './components/HelpModal';
 import { PracticeModeOverlay } from './components/PracticeModeOverlay';
-import { NoteArticleModal } from './components/NoteArticleModal';
+import { NewScoreWizardModal } from './components/NewScoreWizardModal';
 
-const DRAFT_STORAGE_KEY = 'kotoBunkafu.draft.v4';
+const DRAFT_STORAGE_KEY = 'kotoBunkafu.draft.v7';
+
+export interface CopiedSlotItem {
+  slot: Slot;
+  sourceDiv: 1 | 2 | 3 | 4;
+}
 
 export default function App() {
-  // Score state
+  // Score state (defaults to さくらさくら)
   const [score, setScore] = useState<KotoScore>(() => {
     try {
       const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        if (parsed?.id === 'sakura' || parsed?.title === 'さくらさくら') {
+          return createSakuraScore();
+        }
         if (parsed?.id === 'kojo' || parsed?.title === '荒城の月') {
           return createKojoScore();
         }
-        return normalizeScore(parsed, createKojoScore());
+        return normalizeScore(parsed, createSakuraScore());
       }
     } catch {
       // ignore
     }
-    return createKojoScore();
+    return createSakuraScore();
   });
 
   // Score container ref for scrolling
@@ -71,7 +80,9 @@ export default function App() {
   const [selAnchor, setSelAnchor] = useState<number | null>(null);
   const [slotAnchor, setSlotAnchor] = useState<{ m: number; b: number; s: number } | null>(null);
   const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
-  const [inputDiv, setInputDiv] = useState<1 | 2 | 3 | 4>(1);
+  const [isDraggingSlots, setIsDraggingSlots] = useState(false);
+  const [statusToast, setStatusToast] = useState<string | null>(null);
+  const [inputDiv, setInputDiv] = useState<1 | 2 | 3 | 4>(2);
   const [isChordMode, setIsChordMode] = useState(false);
   const [lastEnteredSlot, setLastEnteredSlot] = useState<{ m: number; b: number; s: number } | null>(null);
 
@@ -91,10 +102,34 @@ export default function App() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPracticeMode, setIsPracticeMode] = useState(false);
-  const [isNoteArticleOpen, setIsNoteArticleOpen] = useState(false);
+  const [isNewScoreWizardOpen, setIsNewScoreWizardOpen] = useState(false);
 
-  // Clipboard for measures
+  // Clipboard for measures & slots (Excel-like multi-cell clipboard)
   const clipboardRef = useRef<any[] | null>(null);
+  const slotClipboardRef = useRef<CopiedSlotItem[] | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setStatusToast(msg);
+    setTimeout(() => {
+      setStatusToast(curr => (curr === msg ? null : curr));
+    }, 2200);
+  }, []);
+
+  const handlePrint = useCallback(() => {
+    const originalTitle = document.title;
+    document.title = score.title ? `${score.title} - 琴譜` : '琴譜';
+    window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1200);
+  }, [score.title]);
+
+  // Global mouseup listener for drag selection ending outside sheet
+  useEffect(() => {
+    const onGlobalMouseUp = () => setIsDraggingSlots(false);
+    window.addEventListener('mouseup', onGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', onGlobalMouseUp);
+  }, []);
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -134,6 +169,20 @@ export default function App() {
       return next;
     });
   }, [pushUndo]);
+
+  const handleCreateScoreFromWizard = useCallback((newScore: KotoScore) => {
+    pushUndo(score);
+    setScore(newScore);
+    setCursor({ m: 0, b: 0, s: 0, low: false });
+    setSelectedSlotKeys(new Set());
+    setSelectedRange(null);
+    setSelAnchor(null);
+    setSlotAnchor(null);
+    undoStackRef.current = [];
+    redoStackRef.current = [];
+    setHistoryVersion(v => v + 1);
+    showToast(`「${newScore.title || '無題'}」を作成しました`);
+  }, [score, pushUndo, showToast]);
 
   const handleUndo = useCallback(() => {
     if (!undoStackRef.current.length) return;
@@ -532,7 +581,7 @@ export default function App() {
   }, [score]);
 
   // Note entry: Pluck string and input into current slot
-  const inputString = useCallback((stringIndex: number) => {
+  const inputString = useCallback((stringIndex: number, forceChord?: boolean) => {
     const pitches = getPitches(score);
     kotoSynth.pluck(stringIndex, pitches[stringIndex], 0, 0.85);
 
@@ -562,7 +611,9 @@ export default function App() {
       slot.rest = false;
       slot.tie = false;
 
-      if (isChordMode) {
+      const chord = forceChord !== undefined ? forceChord : isChordMode;
+
+      if (chord) {
         if (slot.notes.includes(stringIndex)) {
           slot.notes = slot.notes.filter(n => n !== stringIndex);
         } else {
@@ -574,7 +625,7 @@ export default function App() {
 
       setLastEnteredSlot({ m, b, s });
 
-      if (!isChordMode) {
+      if (!chord) {
         let nextS = s + 1;
         let nextB = b;
         let nextM = m;
@@ -594,6 +645,37 @@ export default function App() {
       }
     });
   }, [score, cursor, inputDiv, isChordMode, mutateScore]);
+
+  // Set note duration / beat division for current beat (splits or merges cell)
+  const handleSetInputDiv = useCallback((newDiv: 1 | 2 | 3 | 4) => {
+    setInputDiv(newDiv);
+    mutateScore(draft => {
+      let m = cursor.m;
+      let b = cursor.b;
+      while (m >= draft.measures.length) {
+        draft.measures.push(createNewMeasure(draft.beatsPerMeasure));
+      }
+      const beat = draft.measures[m]?.beats[b];
+      if (!beat) return;
+      if (beat.div === newDiv) return;
+
+      const oldSlots = beat.slots || [];
+      const newSlots: any[] = [];
+      for (let i = 0; i < newDiv; i++) {
+        if (i < oldSlots.length) {
+          newSlots.push(oldSlots[i]);
+        } else {
+          newSlots.push(createNewSlot());
+        }
+      }
+      beat.div = newDiv;
+      beat.slots = newSlots;
+
+      if (cursor.s >= newDiv) {
+        setCursor(prev => ({ ...prev, s: newDiv - 1, low: false }));
+      }
+    });
+  }, [cursor.m, cursor.b, cursor.s, mutateScore]);
 
   // Rest, Tie, Clear
   const handleInputRest = useCallback(() => {
@@ -793,69 +875,80 @@ export default function App() {
     });
   }, [cursor.m, selectedRange, mutateScore]);
 
-  const handleCopyMeasure = useCallback(() => {
-    const [start, end] = selectedRange ? selectedRange : [cursor.m, cursor.m];
-    clipboardRef.current = JSON.parse(JSON.stringify(score.measures.slice(start, end + 1)));
-  }, [score, selectedRange, cursor.m]);
+  // Helper to select contiguous slot range between anchor and target (Excel-like range)
+  const selectSlotRange = useCallback(
+    (anchor: { m: number; b: number; s: number }, target: { m: number; b: number; s: number }) => {
+      const toLinear = (pos: { m: number; b: number; s: number }) => pos.m * 10000 + pos.b * 100 + pos.s;
+      const minL = Math.min(toLinear(anchor), toLinear(target));
+      const maxL = Math.max(toLinear(anchor), toLinear(target));
+      const newSet = new Set<string>();
 
-  const handlePasteMeasure = useCallback(() => {
-    if (!clipboardRef.current || !clipboardRef.current.length) return;
-    mutateScore(draft => {
-      const copied = JSON.parse(JSON.stringify(clipboardRef.current));
-      draft.measures.splice(cursor.m, 0, ...copied);
-    });
-  }, [cursor.m, mutateScore]);
-
-  // Click on Slot in Score (Supports Excel-like multi-cell selection with Shift / Ctrl)
-  const handleSlotClick = useCallback(
-    (mIdx: number, bIdx: number, sIdx: number, low?: boolean, modifierKey?: boolean, shiftKey?: boolean) => {
-      const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
-
-      if (shiftKey && slotAnchor) {
-        // Excel-like Shift+Click: select rectangular/continuous range of slots between slotAnchor and target
-        const startM = Math.min(slotAnchor.m, mIdx);
-        const endM = Math.max(slotAnchor.m, mIdx);
-        const newSet = new Set<string>();
-
-        for (let m = startM; m <= endM; m++) {
-          const meas = score.measures[m];
-          if (!meas) continue;
-          meas.beats.forEach((b, bI) => {
-            b.slots.forEach((_, sI) => {
-              // Linear index check between anchor and current target
-              const linearAnchor = slotAnchor.m * 1000 + slotAnchor.b * 10 + slotAnchor.s;
-              const linearCurrent = mIdx * 1000 + bIdx * 10 + sIdx;
-              const linearThis = m * 1000 + bI * 10 + sI;
-              const minL = Math.min(linearAnchor, linearCurrent);
-              const maxL = Math.max(linearAnchor, linearCurrent);
-              if (linearThis >= minL && linearThis <= maxL) {
-                newSet.add(`${m}-${bI}-${sI}`);
-              }
-            });
+      score.measures.forEach((meas, m) => {
+        meas.beats.forEach((b, bI) => {
+          b.slots.forEach((_, sI) => {
+            const lin = m * 10000 + bI * 100 + sI;
+            if (lin >= minL && lin <= maxL) {
+              newSet.add(`${m}-${bI}-${sI}`);
+            }
           });
-        }
-        setSelectedSlotKeys(newSet);
-      } else if (modifierKey) {
-        // Excel-like Ctrl / Cmd+Click: toggle individual cell in selection set
+        });
+      });
+
+      setSelectedSlotKeys(newSet);
+    },
+    [score]
+  );
+
+  // Excel-like Slot Mouse Down (Click, Drag Start, Shift+Click, Ctrl+Click)
+  const handleSlotMouseDown = useCallback(
+    (mIdx: number, bIdx: number, sIdx: number, e: React.MouseEvent) => {
+      if (e.shiftKey && slotAnchor) {
+        selectSlotRange(slotAnchor, { m: mIdx, b: bIdx, s: sIdx });
+        setCursor({ m: mIdx, b: bIdx, s: sIdx, low: false });
+      } else if (e.ctrlKey || e.metaKey) {
+        const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
         setSelectedSlotKeys(prev => {
           const next = new Set(prev);
-          if (next.has(slotKey)) {
-            next.delete(slotKey);
-          } else {
-            next.add(slotKey);
-          }
+          if (next.has(slotKey)) next.delete(slotKey);
+          else next.add(slotKey);
           return next;
         });
         setSlotAnchor({ m: mIdx, b: bIdx, s: sIdx });
+        setCursor({ m: mIdx, b: bIdx, s: sIdx, low: false });
       } else {
-        // Single normal click resets multi-select
-        setSelectedSlotKeys(new Set());
-        setSelectedRange(null);
-        setSelAnchor(null);
         setSlotAnchor({ m: mIdx, b: bIdx, s: sIdx });
+        setSelectedSlotKeys(new Set());
+        setIsDraggingSlots(true);
+        setSelectedRange(null);
+        setCursor({ m: mIdx, b: bIdx, s: sIdx, low: false });
       }
+    },
+    [slotAnchor, selectSlotRange]
+  );
 
-      setCursor({ m: mIdx, b: bIdx, s: sIdx, low });
+  // Excel-like Drag to Select
+  const handleSlotMouseEnter = useCallback(
+    (mIdx: number, bIdx: number, sIdx: number) => {
+      if (isDraggingSlots && slotAnchor) {
+        selectSlotRange(slotAnchor, { m: mIdx, b: bIdx, s: sIdx });
+        setCursor({ m: mIdx, b: bIdx, s: sIdx, low: false });
+      }
+    },
+    [isDraggingSlots, slotAnchor, selectSlotRange]
+  );
+
+  const handleSlotMouseUp = useCallback(() => {
+    setIsDraggingSlots(false);
+  }, []);
+
+  // Click on Slot in Score
+  const handleSlotClick = useCallback(
+    (mIdx: number, bIdx: number, sIdx: number) => {
+      const beat = score.measures[mIdx]?.beats[bIdx];
+      setCursor({ m: mIdx, b: bIdx, s: sIdx, low: false });
+      if (beat) {
+        setInputDiv(beat.div);
+      }
       setLastEnteredSlot(null);
 
       const sl = score.measures[mIdx]?.beats[bIdx]?.slots[sIdx];
@@ -863,8 +956,180 @@ export default function App() {
         previewSlot(sl);
       }
     },
-    [score, slotAnchor, isPlaying, previewSlot]
+    [score, isPlaying, previewSlot]
   );
+
+  // Excel-like Copy (Ctrl+C)
+  const handleCopy = useCallback(() => {
+    if (selectedSlotKeys.size > 0) {
+      // Sort keys by linear order
+      const sortedKeys = Array.from(selectedSlotKeys).sort((a, b) => {
+        const [m1, b1, s1] = a.split('-').map(Number);
+        const [m2, b2, s2] = b.split('-').map(Number);
+        return m1 * 10000 + b1 * 100 + s1 - (m2 * 10000 + b2 * 100 + s2);
+      });
+
+      const copied: CopiedSlotItem[] = [];
+      const textParts: string[] = [];
+
+      sortedKeys.forEach(k => {
+        const [m, b, s] = k.split('-').map(Number);
+        const beat = score.measures[m]?.beats[b];
+        const slot = beat?.slots[s];
+        if (slot && beat) {
+          copied.push({
+            slot: JSON.parse(JSON.stringify(slot)),
+            sourceDiv: beat.div || 2
+          });
+          if (slot.rest) textParts.push('○');
+          else if (slot.tie) textParts.push('ー');
+          else if (slot.repeat2) textParts.push('𝄥');
+          else if (slot.notes?.length) {
+            textParts.push(slot.notes.map(n => KANJI_STRINGS[n]).join('+'));
+          } else {
+            textParts.push('');
+          }
+        }
+      });
+
+      slotClipboardRef.current = copied;
+      try {
+        navigator.clipboard.writeText(textParts.join('\t'));
+      } catch {
+        // ignore
+      }
+      showToast(`${copied.length}マスをコピーしました (Ctrl+C)`);
+      return;
+    }
+
+    if (selectedRange) {
+      const [start, end] = selectedRange;
+      clipboardRef.current = JSON.parse(JSON.stringify(score.measures.slice(start, end + 1)));
+      showToast(`${end - start + 1}小節をコピーしました`);
+      return;
+    }
+
+    // Default: copy single active slot
+    const curBeat = score.measures[cursor.m]?.beats[cursor.b];
+    const curSlot = curBeat?.slots[cursor.s];
+    if (curSlot && curBeat) {
+      slotClipboardRef.current = [{
+        slot: JSON.parse(JSON.stringify(curSlot)),
+        sourceDiv: curBeat.div || 2
+      }];
+      showToast('1マスをコピーしました (Ctrl+C)');
+    }
+  }, [selectedSlotKeys, selectedRange, cursor, score, showToast]);
+
+  // Excel-like Cut (Ctrl+X)
+  const handleCut = useCallback(() => {
+    if (selectedSlotKeys.size > 0) {
+      const count = selectedSlotKeys.size;
+      handleCopy();
+      handleInputClear();
+      showToast(`${count}マスを切り取りました (Ctrl+X)`);
+      return;
+    }
+    if (selectedRange) {
+      handleCopy();
+      handleDeleteMeasure();
+      showToast('小節を切り取りました');
+      return;
+    }
+    handleCopy();
+    handleInputClear();
+  }, [selectedSlotKeys, selectedRange, handleCopy, handleInputClear, handleDeleteMeasure, showToast]);
+
+  // Excel-like Paste (Ctrl+V)
+  const handlePaste = useCallback(() => {
+    // If multi-cell clipboard has content
+    if (slotClipboardRef.current && slotClipboardRef.current.length > 0) {
+      const copiedSlots = slotClipboardRef.current;
+      mutateScore(draft => {
+        let curM = cursor.m;
+        let curB = cursor.b;
+        let curS = cursor.s;
+        const newSel = new Set<string>();
+
+        copiedSlots.forEach(item => {
+          while (curM >= draft.measures.length) {
+            draft.measures.push(createNewMeasure(draft.beatsPerMeasure));
+          }
+
+          let meas = draft.measures[curM];
+          if (curB >= meas.beats.length) {
+            curB = 0;
+            curM++;
+            while (curM >= draft.measures.length) {
+              draft.measures.push(createNewMeasure(draft.beatsPerMeasure));
+            }
+            meas = draft.measures[curM];
+          }
+
+          let beat = meas.beats[curB];
+          if (!beat) return;
+
+          // If the target beat's division is smaller than the copied note's source division,
+          // adapt beat.div so eighth notes don't turn into quarter notes!
+          if (beat.div < item.sourceDiv) {
+            const oldSlots = beat.slots;
+            beat.div = item.sourceDiv;
+            beat.slots = Array.from({ length: item.sourceDiv }, (_, idx) => oldSlots[idx] || createNewSlot());
+          }
+
+          if (curS >= beat.slots.length) {
+            curS = 0;
+            curB++;
+            if (curB >= meas.beats.length) {
+              curB = 0;
+              curM++;
+              while (curM >= draft.measures.length) {
+                draft.measures.push(createNewMeasure(draft.beatsPerMeasure));
+              }
+              meas = draft.measures[curM];
+            }
+            beat = meas.beats[curB];
+            if (beat && beat.div < item.sourceDiv) {
+              const oldSlots = beat.slots;
+              beat.div = item.sourceDiv;
+              beat.slots = Array.from({ length: item.sourceDiv }, (_, idx) => oldSlots[idx] || createNewSlot());
+            }
+          }
+
+          if (beat && beat.slots[curS]) {
+            beat.slots[curS] = JSON.parse(JSON.stringify(item.slot));
+            newSel.add(`${curM}-${curB}-${curS}`);
+          }
+
+          // Advance cursor to next slot
+          curS++;
+          if (beat && curS >= beat.slots.length) {
+            curS = 0;
+            curB++;
+            if (curB >= meas.beats.length) {
+              curB = 0;
+              curM++;
+            }
+          }
+        });
+
+        setSelectedSlotKeys(newSel);
+        setCursor({ m: curM, b: curB, s: curS, low: false });
+      });
+
+      showToast(`${copiedSlots.length}マスを貼り付けました (Ctrl+V)`);
+      return;
+    }
+
+    // Fallback: paste measures
+    if (clipboardRef.current && clipboardRef.current.length) {
+      mutateScore(draft => {
+        const copied = JSON.parse(JSON.stringify(clipboardRef.current));
+        draft.measures.splice(cursor.m, 0, ...copied);
+      });
+      showToast(`${clipboardRef.current.length}小節を貼り付けました`);
+    }
+  }, [cursor, mutateScore, showToast]);
 
   const handleMeasureClick = useCallback(
     (mIdx: number) => {
@@ -908,12 +1173,17 @@ export default function App() {
         }
         if (e.key === 'c') {
           e.preventDefault();
-          handleCopyMeasure();
+          handleCopy();
+          return;
+        }
+        if (e.key === 'x') {
+          e.preventDefault();
+          handleCut();
           return;
         }
         if (e.key === 'v') {
           e.preventDefault();
-          handlePasteMeasure();
+          handlePaste();
           return;
         }
         if (e.key === 'a' || e.key === 'A') {
@@ -930,9 +1200,14 @@ export default function App() {
           setSelectedSlotKeys(allKeys);
           return;
         }
+        if (e.key === 'n' || e.key === 'N') {
+          e.preventDefault();
+          setIsNewScoreWizardOpen(true);
+          return;
+        }
         if (e.key === 'p' || e.key === 'P') {
           e.preventDefault();
-          window.print();
+          handlePrint();
           return;
         }
         if (e.key === 's') {
@@ -965,21 +1240,21 @@ export default function App() {
         return;
       }
 
-      // Division length Q, W, E, R
+      // Division length Q, W, E, R (directly splits / formats current beat)
       if (e.key === 'q' || e.key === 'Q') {
-        setInputDiv(1);
+        handleSetInputDiv(1);
         return;
       }
       if (e.key === 'w' || e.key === 'W') {
-        setInputDiv(2);
+        handleSetInputDiv(2);
         return;
       }
       if (e.key === 'e' || e.key === 'E') {
-        setInputDiv(3);
+        handleSetInputDiv(3);
         return;
       }
       if (e.key === 'r' || e.key === 'R') {
-        setInputDiv(4);
+        handleSetInputDiv(4);
         return;
       }
 
@@ -1019,74 +1294,83 @@ export default function App() {
         return;
       }
 
-      // Arrow navigation
+      // Arrow navigation (supports Excel-like Shift+Arrow range selection)
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
         const v = score.view.layout === 'vertical';
-        setCursor(prev => {
-          let m = prev.m;
-          let b = prev.b;
-          let s = prev.s;
-          const beat = score.measures[m]?.beats[b] || { div: 1 };
 
-          if (v) {
-            if (e.key === 'ArrowDown') {
-              s++;
-              if (s >= beat.div) {
-                s = 0;
-                b++;
-                if (b >= score.beatsPerMeasure) {
-                  b = 0;
-                  m = Math.min(score.measures.length - 1, m + 1);
-                }
+        let m = cursor.m;
+        let b = cursor.b;
+        let s = cursor.s;
+        const beat = score.measures[m]?.beats[b] || { div: 1 };
+
+        if (v) {
+          if (e.key === 'ArrowDown') {
+            s++;
+            if (s >= beat.div) {
+              s = 0;
+              b++;
+              if (b >= score.beatsPerMeasure) {
+                b = 0;
+                m = Math.min(score.measures.length - 1, m + 1);
               }
-            } else if (e.key === 'ArrowUp') {
-              s--;
-              if (s < 0) {
-                b--;
-                if (b < 0) {
-                  m = Math.max(0, m - 1);
-                  b = score.beatsPerMeasure - 1;
-                }
-                const prevBeat = score.measures[m]?.beats[b] || { div: 1 };
-                s = prevBeat.div - 1;
-              }
-            } else if (e.key === 'ArrowLeft') {
-              m = Math.min(score.measures.length - 1, m + score.view.perLine);
-            } else if (e.key === 'ArrowRight') {
-              m = Math.max(0, m - score.view.perLine);
             }
-          } else {
-            if (e.key === 'ArrowRight') {
-              s++;
-              if (s >= beat.div) {
-                s = 0;
-                b++;
-                if (b >= score.beatsPerMeasure) {
-                  b = 0;
-                  m = Math.min(score.measures.length - 1, m + 1);
-                }
+          } else if (e.key === 'ArrowUp') {
+            s--;
+            if (s < 0) {
+              b--;
+              if (b < 0) {
+                m = Math.max(0, m - 1);
+                b = score.beatsPerMeasure - 1;
               }
-            } else if (e.key === 'ArrowLeft') {
-              s--;
-              if (s < 0) {
-                b--;
-                if (b < 0) {
-                  m = Math.max(0, m - 1);
-                  b = score.beatsPerMeasure - 1;
-                }
-                const prevBeat = score.measures[m]?.beats[b] || { div: 1 };
-                s = prevBeat.div - 1;
-              }
-            } else if (e.key === 'ArrowDown') {
-              m = Math.min(score.measures.length - 1, m + score.view.perLine);
-            } else if (e.key === 'ArrowUp') {
-              m = Math.max(0, m - score.view.perLine);
+              const prevBeat = score.measures[m]?.beats[b] || { div: 1 };
+              s = prevBeat.div - 1;
             }
+          } else if (e.key === 'ArrowLeft') {
+            m = Math.min(score.measures.length - 1, m + score.view.perLine);
+          } else if (e.key === 'ArrowRight') {
+            m = Math.max(0, m - score.view.perLine);
           }
+        } else {
+          if (e.key === 'ArrowRight') {
+            s++;
+            if (s >= beat.div) {
+              s = 0;
+              b++;
+              if (b >= score.beatsPerMeasure) {
+                b = 0;
+                m = Math.min(score.measures.length - 1, m + 1);
+              }
+            }
+          } else if (e.key === 'ArrowLeft') {
+            s--;
+            if (s < 0) {
+              b--;
+              if (b < 0) {
+                m = Math.max(0, m - 1);
+                b = score.beatsPerMeasure - 1;
+              }
+              const prevBeat = score.measures[m]?.beats[b] || { div: 1 };
+              s = prevBeat.div - 1;
+            }
+          } else if (e.key === 'ArrowDown') {
+            m = Math.min(score.measures.length - 1, m + score.view.perLine);
+          } else if (e.key === 'ArrowUp') {
+            m = Math.max(0, m - score.view.perLine);
+          }
+        }
 
-          return { m, b, s, low: false };
-        });
+        const nextPos = { m, b, s, low: false };
+        if (e.shiftKey) {
+          const anchor = slotAnchor || { m: cursor.m, b: cursor.b, s: cursor.s };
+          if (!slotAnchor) setSlotAnchor(anchor);
+          selectSlotRange(anchor, nextPos);
+        } else {
+          setSelectedSlotKeys(new Set());
+          setSelectedRange(null);
+          setSlotAnchor(nextPos);
+        }
+        setCursor(nextPos);
         return;
       }
 
@@ -1101,17 +1385,44 @@ export default function App() {
         return;
       }
 
+      // Digit codes for Shift + number chord entry (US/JIS keyboard compatible)
+      const digitCodeMap: Record<string, number> = {
+        Digit1: 0,
+        Digit2: 1,
+        Digit3: 2,
+        Digit4: 3,
+        Digit5: 4,
+        Digit6: 5,
+        Digit7: 6,
+        Digit8: 7,
+        Digit9: 8,
+        Digit0: 9,
+        Minus: 10,
+        Equal: 11,
+        IntlYen: 12,
+        Backslash: 12
+      };
+
+      if (e.code in digitCodeMap) {
+        const strIdx = digitCodeMap[e.code];
+        if (strIdx !== undefined && strIdx < (score.stringCount || 13)) {
+          e.preventDefault();
+          inputString(strIdx, e.shiftKey ? true : undefined);
+          return;
+        }
+      }
+
       // Strings: Number row 1~0, -, ^, ¥
       const row1Idx = KEYBOARD_ROW1.indexOf(e.key as any);
       if (row1Idx >= 0) {
-        inputString(row1Idx);
+        inputString(row1Idx, e.shiftKey ? true : undefined);
         return;
       }
 
       // Home row: A~], @
       const homeIdx = KEYBOARD_HOME.indexOf(e.key.toLowerCase() as any);
       if (homeIdx >= 0) {
-        inputString(homeIdx);
+        inputString(homeIdx, e.shiftKey ? true : undefined);
         return;
       }
     };
@@ -1124,8 +1435,11 @@ export default function App() {
     isPlaying,
     handleUndo,
     handleRedo,
-    handleCopyMeasure,
-    handlePasteMeasure,
+    handleCopy,
+    handleCut,
+    handlePaste,
+    selectSlotRange,
+    slotAnchor,
     togglePlay,
     stopPlayback,
     startPlayback,
@@ -1133,7 +1447,8 @@ export default function App() {
     handleInputTie,
     handleInputClear,
     handleToggleOrn,
-    inputString
+    inputString,
+    handleSetInputDiv
   ]);
 
   const curSlot = score.measures[cursor.m]?.beats[cursor.b]?.slots[cursor.s] || null;
@@ -1157,9 +1472,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#edece8] text-stone-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#edece8] print:bg-white print:min-h-0 text-stone-900 flex flex-col font-sans">
       {/* Container */}
-      <div className="w-full max-w-[1360px] mx-auto p-2 sm:p-3 flex flex-col gap-2">
+      <div className="w-full max-w-[1360px] mx-auto p-2 sm:p-3 print:p-0 print:m-0 print:max-w-none flex flex-col gap-2">
         {/* Header (Top app bar with title, actions, and collapsible settings) */}
         <Header
           score={score}
@@ -1170,8 +1485,8 @@ export default function App() {
           onOpenExport={() => setIsExportOpen(true)}
           onOpenHelp={() => setIsHelpOpen(true)}
           onOpenPracticeMode={() => setIsPracticeMode(true)}
-          onOpenNoteArticle={() => setIsNoteArticleOpen(true)}
-          onPrint={() => window.print()}
+          onOpenNewScoreWizard={() => setIsNewScoreWizardOpen(true)}
+          onPrint={handlePrint}
         />
 
         {/* Measure Scrubber / Quick Navigation Bar with Fit-All Overview Switcher */}
@@ -1206,6 +1521,9 @@ export default function App() {
                 selectedRange={selectedRange}
                 selectedSlotKeys={selectedSlotKeys}
                 onSlotClick={handleSlotClick}
+                onSlotMouseDown={handleSlotMouseDown}
+                onSlotMouseEnter={handleSlotMouseEnter}
+                onSlotMouseUp={handleSlotMouseUp}
                 onMeasureClick={handleMeasureClick}
                 onLyricsChange={handleLyricsChange}
                 onUpdateScoreMeta={meta => mutateScore(d => Object.assign(d, meta))}
@@ -1229,6 +1547,9 @@ export default function App() {
                 selectedRange={selectedRange}
                 selectedSlotKeys={selectedSlotKeys}
                 onSlotClick={handleSlotClick}
+                onSlotMouseDown={handleSlotMouseDown}
+                onSlotMouseEnter={handleSlotMouseEnter}
+                onSlotMouseUp={handleSlotMouseUp}
                 onMeasureClick={handleMeasureClick}
                 onLyricsChange={handleLyricsChange}
                 onUpdateScoreMeta={meta => mutateScore(d => Object.assign(d, meta))}
@@ -1247,7 +1568,7 @@ export default function App() {
         </main>
 
         {/* Dock Controls (Input pad, tabs, playback, thumb-friendly navigation) */}
-        <div className="sticky bottom-1 z-30">
+        <div className="sticky bottom-1 z-30 no-print">
           <Dock
             score={score}
             currentCursor={{ m: cursor.m, b: cursor.b, s: cursor.s }}
@@ -1271,7 +1592,7 @@ export default function App() {
               stopPlayback();
               setCursor({ m: 0, b: 0, s: 0 });
             }}
-            onSetInputDiv={setInputDiv}
+            onSetInputDiv={handleSetInputDiv}
             onToggleChordMode={() => setIsChordMode(!isChordMode)}
             onInputRest={handleInputRest}
             onInputTie={handleInputTie}
@@ -1281,8 +1602,8 @@ export default function App() {
             onAddMeasure={handleAddMeasure}
             onInsertMeasure={handleInsertMeasure}
             onDeleteMeasure={handleDeleteMeasure}
-            onCopyMeasure={handleCopyMeasure}
-            onPasteMeasure={handlePasteMeasure}
+            onCopyMeasure={handleCopy}
+            onPasteMeasure={handlePaste}
             onUndo={handleUndo}
             onRedo={handleRedo}
             onStringClick={inputString}
@@ -1317,6 +1638,48 @@ export default function App() {
         )}
       </div>
 
+      {/* Excel-like Multi-Cell Selection Floating Action Bar (Only shown when 2 or more cells are selected) */}
+      {selectedSlotKeys.size > 1 && (
+        <div className="fixed top-14 sm:top-16 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 rounded-full border border-amber-400 bg-amber-50/95 px-3.5 py-1.5 shadow-xl text-xs font-semibold text-amber-950 backdrop-blur-md no-print transition-all animate-fade-in">
+          <span className="font-bold text-amber-900">【{selectedSlotKeys.size}マス選択】</span>
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1 bg-white hover:bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-md cursor-pointer font-bold text-amber-950 shadow-2xs transition-colors"
+            title="選択したマスをコピー (Ctrl+C)"
+          >
+            コピー (Ctrl+C)
+          </button>
+          <button
+            onClick={handleCut}
+            className="flex items-center gap-1 bg-white hover:bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-md cursor-pointer font-bold text-amber-950 shadow-2xs transition-colors"
+            title="選択したマスを切り取り (Ctrl+X)"
+          >
+            切取 (Ctrl+X)
+          </button>
+          <button
+            onClick={handleInputClear}
+            className="flex items-center gap-1 bg-white hover:bg-red-50 border border-red-300 px-2.5 py-0.5 rounded-md cursor-pointer text-red-700 font-bold shadow-2xs transition-colors"
+            title="選択したマスを消去 (Delete)"
+          >
+            消去 (Del)
+          </button>
+          <button
+            onClick={() => setSelectedSlotKeys(new Set())}
+            className="hover:bg-amber-200/80 px-1.5 py-0.5 rounded text-stone-500 hover:text-stone-800 cursor-pointer ml-1 text-sm leading-none"
+            title="選択解除 (Esc)"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Floating Status Toast Notification */}
+      {statusToast && (
+        <div className="fixed top-24 sm:top-28 left-1/2 -translate-x-1/2 z-50 rounded-full bg-stone-900/95 text-white text-xs font-bold px-4 py-1.5 shadow-xl backdrop-blur-md no-print transition-all animate-fade-in flex items-center gap-1.5 pointer-events-none">
+          <span className="text-amber-400">✓</span> {statusToast}
+        </div>
+      )}
+
       {/* Modals */}
       <TuningModal
         score={score}
@@ -1334,6 +1697,13 @@ export default function App() {
           setScore(s);
           setCursor({ m: 0, b: 0, s: 0 });
         }}
+        onOpenNewScoreWizard={() => setIsNewScoreWizardOpen(true)}
+      />
+
+      <NewScoreWizardModal
+        isOpen={isNewScoreWizardOpen}
+        onClose={() => setIsNewScoreWizardOpen(false)}
+        onCreateScore={handleCreateScoreFromWizard}
       />
 
       <ExportModal
@@ -1345,16 +1715,9 @@ export default function App() {
           setScore(s);
           setCursor({ m: 0, b: 0, s: 0 });
         }}
-        onOpenNoteArticle={() => setIsNoteArticleOpen(true)}
       />
 
       <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
-
-      <NoteArticleModal
-        score={score}
-        isOpen={isNoteArticleOpen}
-        onClose={() => setIsNoteArticleOpen(false)}
-      />
 
       {/* Zen Performance & Practice Mode Overlay */}
       {isPracticeMode && (

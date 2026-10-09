@@ -26,7 +26,10 @@ interface ScoreSheetHorizontalProps {
   currentPlayKey: string | null;
   selectedRange: [number, number] | null;
   selectedSlotKeys?: Set<string>;
-  onSlotClick: (mIdx: number, bIdx: number, sIdx: number, low?: boolean, shiftKey?: boolean) => void;
+  onSlotClick: (mIdx: number, bIdx: number, sIdx: number, low?: boolean, shiftKey?: boolean, ctrlKey?: boolean) => void;
+  onSlotMouseDown?: (mIdx: number, bIdx: number, sIdx: number, e: React.MouseEvent) => void;
+  onSlotMouseEnter?: (mIdx: number, bIdx: number, sIdx: number) => void;
+  onSlotMouseUp?: () => void;
   onMeasureClick: (mIdx: number) => void;
   onLyricsChange?: (mIdx: number, bIdx: number, text: string) => void;
   onUpdateScoreMeta?: (meta: Partial<KotoScore>) => void;
@@ -45,6 +48,9 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
   selectedRange,
   selectedSlotKeys,
   onSlotClick,
+  onSlotMouseDown,
+  onSlotMouseEnter,
+  onSlotMouseUp,
   onMeasureClick,
   onLyricsChange,
   onUpdateScoreMeta,
@@ -134,6 +140,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
 
   return (
     <div
+      onMouseUp={onSlotMouseUp}
       data-font={score.view.fontStyle || 'shippori'}
       style={{ zoom: score.view.zoom }}
       className={`relative flex flex-col gap-6 select-none ${fontClass} text-stone-900 transition-all w-full max-w-5xl mx-auto pb-6`}
@@ -421,7 +428,9 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                             /* 4th note (♩) full cell */
                             <div
                               id={`slot-h-${mIdx}-${bIdx}-0`}
-                              onClick={e => onSlotClick(mIdx, bIdx, 0, false, e.shiftKey || e.ctrlKey || e.metaKey)}
+                              onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, 0, e)}
+                              onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, 0)}
+                              onClick={e => onSlotClick(mIdx, bIdx, 0, false, e.shiftKey, e.ctrlKey || e.metaKey)}
                               className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
                                 selectedSlotKeys?.has(`${mIdx}-${bIdx}-0`)
                                   ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
@@ -442,7 +451,9 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                   <div
                                     key={sIdx}
                                     id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
-                                    onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey || e.ctrlKey || e.metaKey)}
+                                    onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, sIdx, e)}
+                                    onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, sIdx)}
+                                    onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey, e.ctrlKey || e.metaKey)}
                                     className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
                                       isMultiSel
                                         ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
@@ -469,7 +480,9 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                   <div
                                     key={sIdx}
                                     id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
-                                    onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey || e.ctrlKey || e.metaKey)}
+                                    onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, sIdx, e)}
+                                    onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, sIdx)}
+                                    onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey, e.ctrlKey || e.metaKey)}
                                     className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
                                       isMultiSel
                                         ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
@@ -493,7 +506,9 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                   <div
                                     key={sIdx}
                                     id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
-                                    onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey || e.ctrlKey || e.metaKey)}
+                                    onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, sIdx, e)}
+                                    onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, sIdx)}
+                                    onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey, e.ctrlKey || e.metaKey)}
                                     className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
                                       isMultiSel
                                         ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
@@ -586,11 +601,49 @@ function renderSlotContentH(
     if (sl[k]) rh += ORN_MARKS[k];
   });
 
+  const noteCount = sl.notes.length;
+  const isChord = noteCount > 1;
   const fingerText = sl.finger ? String(sl.finger) : '';
-  const isChord = sl.notes.length > 1;
+
+  // Horizontal chord auto-shrink scaling
+  let chordTextSize = '';
+  let scaleTransform = '';
+  let gapClass = 'gap-0.5';
+
+  if (small) {
+    if (noteCount >= 4) {
+      chordTextSize = 'text-[7.5px] leading-none';
+      scaleTransform = 'scale-[0.8] origin-center';
+      gapClass = 'gap-0';
+    } else if (noteCount === 3) {
+      chordTextSize = 'text-[8.5px] leading-none';
+      scaleTransform = 'scale-[0.9] origin-center';
+      gapClass = 'gap-[1px]';
+    } else if (noteCount === 2) {
+      chordTextSize = 'text-[9.5px] leading-none font-bold';
+      gapClass = 'gap-[1px]';
+    } else {
+      chordTextSize = 'text-xs leading-none font-bold';
+    }
+  } else {
+    if (noteCount >= 4) {
+      chordTextSize = 'text-[9px] sm:text-[10px] leading-none font-extrabold';
+      scaleTransform = 'scale-[0.85] origin-center';
+      gapClass = 'gap-[1px]';
+    } else if (noteCount === 3) {
+      chordTextSize = 'text-[11px] sm:text-xs leading-none font-extrabold';
+      scaleTransform = 'scale-[0.92] origin-center';
+      gapClass = 'gap-0.5';
+    } else if (noteCount === 2) {
+      chordTextSize = 'text-xs sm:text-sm font-extrabold';
+      gapClass = 'gap-0.5';
+    } else {
+      chordTextSize = 'text-base sm:text-lg font-bold';
+    }
+  }
 
   return (
-    <div className="relative flex items-center justify-center w-full h-full px-0.5">
+    <div className="relative flex items-center justify-center w-full h-full px-0.5 overflow-hidden">
       {/* Left-hand marks on the left */}
       {lh && (
         <span
@@ -618,31 +671,29 @@ function renderSlotContentH(
         </span>
       )}
 
-      {/* Main notes (side by side for chords) */}
+      {/* Main notes (side by side for chords with auto-shrink scaling) */}
       <div
-        className={`flex items-center justify-center gap-0.5 select-none font-score font-bold leading-none ${
-          lh ? 'pl-2' : ''
-        }`}
+        className={`w-full max-w-full flex items-center justify-center shrink-0 ${scaleTransform}`}
       >
-        {sl.notes.map((n: number, idx: number) => {
-          const char = isArabic ? String(n + 1) : KANJI_STRINGS[n];
-          return (
-            <span
-              key={idx}
-              className={`leading-none ${
-                small
-                  ? isChord
-                    ? 'text-[10px]'
-                    : 'text-xs'
-                  : isChord
-                  ? 'text-xs sm:text-sm font-extrabold text-stone-900 border-b border-stone-400/40 pb-0.5'
-                  : 'text-base sm:text-lg'
-              } ${isArabic ? 'font-sans font-bold' : ''}`}
-            >
-              {char}
-            </span>
-          );
-        })}
+        <div
+          className={`flex items-center justify-center ${gapClass} select-none font-score leading-none ${
+            lh ? 'pl-2' : ''
+          }`}
+        >
+          {sl.notes.map((n: number, idx: number) => {
+            const char = isArabic ? String(n + 1) : KANJI_STRINGS[n];
+            return (
+              <span
+                key={idx}
+                className={`${chordTextSize} shrink-0 ${
+                  isChord ? 'border-b border-stone-400/50 pb-0.5' : ''
+                } ${isArabic ? 'font-sans' : ''}`}
+              >
+                {char}
+              </span>
+            );
+          })}
+        </div>
       </div>
 
       {isRubyOn && renderRuby(sl.notes, sl.oshi, sl.ato)}

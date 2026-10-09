@@ -52,6 +52,51 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </ul>
           </div>
 
+          {/* Multiple notes in one cell guide */}
+          <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4">
+            <h3 className="font-bold text-stone-900 flex items-center gap-1.5 mb-2 font-score text-base">
+              <Music2 className="h-4 w-4 text-amber-800" /> 一マスに複数音を入れる方法
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-stone-700 leading-relaxed">
+              <div className="rounded-lg bg-white border border-amber-200/80 p-3">
+                <span className="font-bold text-indigo-900 block mb-1">
+                  ① 拍を分割して複数の音を並べる（8分音符・3連符・16分音符）
+                </span>
+                <p className="text-stone-600 mb-2">
+                  1拍のマスの中に2つ以上の音符を順番に弾く場合：
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-stone-600">
+                  <li>
+                    下部バーの <strong>「♪♪ (8分)」「3連」「♬ (16分)」</strong> ボタンを押すと、選択中のマスが即座に分割されます。
+                  </li>
+                  <li>
+                    キーボードの <strong>Q (4分) / W (8分) / E (3連) / R (16分)</strong> キーでも瞬時に切り替わります。
+                  </li>
+                  <li>
+                    4分音符のマスは、<strong>下半分をクリック</strong>するだけでも自動的に8分音符に分割されます。
+                  </li>
+                </ul>
+              </div>
+
+              <div className="rounded-lg bg-white border border-amber-200/80 p-3">
+                <span className="font-bold text-amber-900 block mb-1">
+                  ② 同時に複数の弦を弾く（合わせ爪・和音・重音）
+                </span>
+                <p className="text-stone-600 mb-2">
+                  同じマス（タイミング）に複数の音を重ねて鳴らす場合：
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-stone-600">
+                  <li>
+                    下部バーの <strong>「和音モード」</strong> ボタンをONにすると、弦キーを押しても進まず同じマスに複数の音が重なります（例：「四巾」など）。
+                  </li>
+                  <li>
+                    キーボードで入力する場合は、<strong>Shiftキーを押しながら弦キー</strong>（数字キーやホーム段キー）を押すだけで、いつでもその場に音を重ねられます。
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* Keyboard Shortcuts Table */}
           <div className="rounded-xl border border-stone-200 bg-white p-4">
             <h3 className="font-bold text-stone-900 flex items-center gap-1.5 mb-2 font-score">
@@ -121,6 +166,16 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">複数小節の選択</td>
                     <td className="py-1.5"><kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Shift</kbd> + 小節クリック</td>
                     <td className="py-1.5 pl-4 font-sans text-stone-500">範囲コピー、貼り付け、削除、ループ再生</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">複数セルの選択（Excel感覚）</td>
+                    <td className="py-1.5"><kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">ドラッグ</kbd> / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Shift</kbd>+矢印 / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Shift</kbd>+クリック</td>
+                    <td className="py-1.5 pl-4 font-sans text-stone-500">マウスのドラッグやShiftキーで複数マスを一度に範囲選択</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">セルのコピー / 貼付 / 切取</td>
+                    <td className="py-1.5"><kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Ctrl</kbd>+<kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">C</kbd> / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Ctrl</kbd>+<kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">V</kbd> / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Ctrl</kbd>+<kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">X</kbd></td>
+                    <td className="py-1.5 pl-4 font-sans text-stone-500">Excelのように複数マスをコピーし、目的の位置に連続貼り付け</td>
                   </tr>
                   <tr>
                     <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">元に戻す / やり直し</td>

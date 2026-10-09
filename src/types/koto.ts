@@ -226,6 +226,7 @@ export interface ViewSettings {
   showLyrics: boolean;
   showKotoBoard: boolean;
   zoom: number;
+  sixteenthLayout?: 'vertical' | 'grid'; // 16分音符の配置: 'vertical' (縦4段：8分音符より縦に小さく表示) | 'grid' (2x2横分割)
   fontStyle?: 'shippori' | 'kaisei' | 'yuji' | 'klee' | 'noto';
   schoolStyle?: 'standard' | 'seinha' | 'yamada' | 'ancient' | 'modern'; // 流派様式
 }
@@ -284,7 +285,7 @@ export function createNewSlot(): Slot {
   };
 }
 
-export function createNewBeat(div: 1 | 2 | 3 | 4 = 1): Beat {
+export function createNewBeat(div: 1 | 2 | 3 | 4 = 2): Beat {
   return {
     div,
     slots: Array.from({ length: div }, () => createNewSlot()),
@@ -294,7 +295,7 @@ export function createNewBeat(div: 1 | 2 | 3 | 4 = 1): Beat {
 
 export function createNewMeasure(beatsPerMeasure: number = 4): Measure {
   return {
-    beats: Array.from({ length: beatsPerMeasure }, () => createNewBeat(1))
+    beats: Array.from({ length: beatsPerMeasure }, () => createNewBeat(2))
   };
 }
 
@@ -400,8 +401,16 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
     const beats: Beat[] = [];
     for (let bIdx = 0; bIdx < beatsPerMeasure; bIdx++) {
       const b = rawBeats[bIdx];
-      const div = [1, 2, 3, 4].includes(b?.div) ? b.div : 1;
+      let div = [1, 2, 3, 4].includes(b?.div) ? b.div : 2;
       const rawSlots = Array.isArray(b?.slots) ? b.slots : [];
+      // If beat was div 1 and has no notes, rest, or tie, normalize to div 2 (8th-note units)
+      if (div === 1 && rawSlots.length <= 1) {
+        const s0 = rawSlots[0];
+        const isEmpty = !s0 || (!s0.notes?.length && !s0.rest && !s0.tie && !s0.repeat1 && !s0.repeat2);
+        if (isEmpty) {
+          div = 2;
+        }
+      }
       const slots: Slot[] = [];
       for (let sIdx = 0; sIdx < div; sIdx++) {
         const sl = rawSlots[sIdx];

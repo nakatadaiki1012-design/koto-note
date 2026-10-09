@@ -68,7 +68,16 @@ export function exportScoreToMidi(score: KotoScore): Blob {
       b.slots.forEach((sl, sIdx) => {
         if (sl.rest || !sl.notes.length) return;
         const noteStartTick = beatTicks + sIdx * slotTicks;
-        const noteDurationTicks = Math.max(20, Math.round(slotTicks * 0.9));
+        let noteDurationTicks = Math.max(20, Math.round(slotTicks * 0.9));
+        // Extend duration if subsequent slots in this beat are tie or empty (裏拍空白 / 延音線)
+        for (let nextS = sIdx + 1; nextS < b.slots.length; nextS++) {
+          const nextSlot = b.slots[nextS];
+          if (nextSlot.tie || (!nextSlot.rest && (!nextSlot.notes || nextSlot.notes.length === 0))) {
+            noteDurationTicks += slotTicks;
+          } else {
+            break;
+          }
+        }
 
         sl.notes.forEach(strIdx => {
           if (strIdx < 0 || strIdx >= 13) return;

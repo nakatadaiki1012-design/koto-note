@@ -13,6 +13,7 @@ interface ScoreLibraryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoadScore: (score: KotoScore) => void;
+  onOpenNewScoreWizard?: () => void;
 }
 
 const STORAGE_KEY = 'koto_saved_scores_v2';
@@ -21,7 +22,8 @@ export const ScoreLibraryModal: React.FC<ScoreLibraryModalProps> = ({
   score,
   isOpen,
   onClose,
-  onLoadScore
+  onLoadScore,
+  onOpenNewScoreWizard
 }) => {
   const [savedScores, setSavedScores] = useState<KotoScore[]>([]);
 
@@ -68,9 +70,13 @@ export const ScoreLibraryModal: React.FC<ScoreLibraryModalProps> = ({
   };
 
   const handleCreateNew = () => {
-    const s = createEmptyScore();
-    onLoadScore(s);
     onClose();
+    if (onOpenNewScoreWizard) {
+      onOpenNewScoreWizard();
+    } else {
+      const s = createEmptyScore();
+      onLoadScore(s);
+    }
   };
 
   const handleDeleteSaved = (id: string, e: React.MouseEvent) => {
