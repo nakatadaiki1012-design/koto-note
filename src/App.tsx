@@ -21,7 +21,8 @@ import {
   LeftHandOrn,
   RightHandOrn,
   LEFT_HAND_ORNS,
-  RIGHT_HAND_ORNS
+  RIGHT_HAND_ORNS,
+  InputDivType
 } from './types/koto';
 import { createSakuraScore, createKojoScore } from './data/presetScores';
 import { kotoSynth } from './audio/kotoSynth';
@@ -82,7 +83,7 @@ export default function App() {
   const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
   const [isDraggingSlots, setIsDraggingSlots] = useState(false);
   const [statusToast, setStatusToast] = useState<string | null>(null);
-  const [inputDiv, setInputDiv] = useState<1 | 2 | 3 | 4>(2);
+  const [inputDiv, setInputDiv] = useState<InputDivType>(2);
   const [isChordMode, setIsChordMode] = useState(false);
   const [lastEnteredSlot, setLastEnteredSlot] = useState<{ m: number; b: number; s: number } | null>(null);
 
@@ -404,8 +405,14 @@ export default function App() {
               }
             }
           }
+          let slotOffset = s / bt.div;
+          if (bt.subDiv === '8_16_16') {
+            slotOffset = s === 0 ? 0 : s === 1 ? 0.5 : 0.75;
+          } else if (bt.subDiv === '16_16_8') {
+            slotOffset = s === 0 ? 0 : s === 1 ? 0.25 : 0.5;
+          }
           items.push({
-            beat: m * bpm + b + s / bt.div,
+            beat: m * bpm + b + slotOffset,
             m,
             b,
             s,
@@ -556,7 +563,7 @@ export default function App() {
           b = score.beatsPerMeasure - 1;
         }
         const prevBeat = score.measures[m]?.beats[b] || { div: 1 };
-        s = prevBeat.div - 1;
+        s = (prevBeat.slots?.length || prevBeat.div) - 1;
       }
       return { m, b, s, low: false };
     });
@@ -568,7 +575,8 @@ export default function App() {
       let b = prev.b;
       let s = prev.s + 1;
       const beat = score.measures[m]?.beats[b] || { div: 1 };
-      if (s >= beat.div) {
+      const slotCount = beat.slots?.length || beat.div;
+      if (s >= slotCount) {
         s = 0;
         b++;
         if (b >= score.beatsPerMeasure) {
@@ -602,9 +610,20 @@ export default function App() {
         s = 1;
       }
 
-      if (s === 0 && beat.div !== inputDiv && beat.slots[0].notes.length === 0 && !beat.slots[0].rest) {
-        beat.div = inputDiv;
-        beat.slots = Array.from({ length: inputDiv }, () => createNewSlot());
+      if (s === 0 && beat.slots[0].notes.length === 0 && !beat.slots[0].rest) {
+        if (inputDiv === '8_16_16') {
+          beat.div = 3;
+          beat.subDiv = '8_16_16';
+          beat.slots = Array.from({ length: 3 }, () => createNewSlot());
+        } else if (inputDiv === '16_16_8') {
+          beat.div = 3;
+          beat.subDiv = '16_16_8';
+          beat.slots = Array.from({ length: 3 }, () => createNewSlot());
+        } else if (typeof inputDiv === 'number' && beat.div !== inputDiv) {
+          beat.div = inputDiv;
+          beat.subDiv = inputDiv === 3 ? 'equal' : undefined;
+          beat.slots = Array.from({ length: inputDiv }, () => createNewSlot());
+        }
       }
 
       const slot = beat.slots[s];
@@ -630,7 +649,8 @@ export default function App() {
         let nextB = b;
         let nextM = m;
 
-        if (nextS >= beat.div) {
+        const slotCount = beat.slots?.length || beat.div;
+        if (nextS >= slotCount) {
           nextS = 0;
           nextB++;
           if (nextB >= draft.beatsPerMeasure) {
@@ -647,7 +667,7 @@ export default function App() {
   }, [score, cursor, inputDiv, isChordMode, mutateScore]);
 
   // Set note duration / beat division for current beat (splits or merges cell)
-  const handleSetInputDiv = useCallback((newDiv: 1 | 2 | 3 | 4) => {
+  const handleSetInputDiv = useCallback((newDiv: InputDivType) => {
     setInputDiv(newDiv);
     mutateScore(draft => {
       let m = cursor.m;
@@ -657,9 +677,41 @@ export default function App() {
       }
       const beat = draft.measures[m]?.beats[b];
       if (!beat) return;
-      if (beat.div === newDiv) return;
 
       const oldSlots = beat.slots || [];
+
+      if (newDiv === '8_16_16') {
+        beat.div = 3;
+        beat.subDiv = '8_16_16';
+        beat.slots = [
+          oldSlots[0] ? JSON.parse(JSON.stringify(oldSlots[0])) : createNewSlot(),
+          oldSlots[1] ? JSON.parse(JSON.stringify(oldSlots[1])) : createNewSlot(),
+          oldSlots[2] ? JSON.parse(JSON.stringify(oldSlots[2])) : createNewSlot()
+        ];
+        if (cursor.s >= 3) {
+          setCursor(prev => ({ ...prev, s: 2, low: false }));
+        }
+        return;
+      }
+
+      if (newDiv === '16_16_8') {
+        beat.div = 3;
+        beat.subDiv = '16_16_8';
+        beat.slots = [
+          oldSlots[0] ? JSON.parse(JSON.stringify(oldSlots[0])) : createNewSlot(),
+          oldSlots[1] ? JSON.parse(JSON.stringify(oldSlots[1])) : createNewSlot(),
+          oldSlots[2] ? JSON.parse(JSON.stringify(oldSlots[2])) : createNewSlot()
+        ];
+        if (cursor.s >= 3) {
+          setCursor(prev => ({ ...prev, s: 2, low: false }));
+        }
+        return;
+      }
+
+      if (beat.div === newDiv && !beat.subDiv) return;
+
+      beat.div = newDiv;
+      beat.subDiv = newDiv === 3 ? 'equal' : undefined;
       const newSlots: any[] = [];
       for (let i = 0; i < newDiv; i++) {
         if (i < oldSlots.length) {
@@ -668,11 +720,10 @@ export default function App() {
           newSlots.push(createNewSlot());
         }
       }
-      beat.div = newDiv;
       beat.slots = newSlots;
 
-      if (cursor.s >= newDiv) {
-        setCursor(prev => ({ ...prev, s: newDiv - 1, low: false }));
+      if (cursor.s >= (typeof newDiv === 'number' ? newDiv : 3)) {
+        setCursor(prev => ({ ...prev, s: (typeof newDiv === 'number' ? newDiv : 3) - 1, low: false }));
       }
     });
   }, [cursor.m, cursor.b, cursor.s, mutateScore]);
@@ -798,22 +849,39 @@ export default function App() {
   // Toggle Ornament
   const handleToggleOrn = useCallback((ornKey: string) => {
     mutateScore(draft => {
-      const targetPos = lastEnteredSlot || cursor;
+      const applyOrn = (slot: any) => {
+        if (ornKey === 'oshi1') {
+          slot.oshi = slot.oshi === 1 ? 0 : 1;
+        } else if (ornKey === 'oshi2') {
+          slot.oshi = slot.oshi === 2 ? 0 : 2;
+        } else {
+          const val = !slot[ornKey];
+          if (ornKey === 'kaki' && val) slot.hiki = false;
+          if (ornKey === 'hiki' && val) slot.kaki = false;
+          slot[ornKey] = val;
+        }
+      };
+
+      if (selectedSlotKeys.size > 0) {
+        selectedSlotKeys.forEach(k => {
+          const [mStr, bStr, sStr] = k.split('-');
+          const m = parseInt(mStr, 10);
+          const b = parseInt(bStr, 10);
+          const s = parseInt(sStr, 10);
+          const slot = draft.measures[m]?.beats[b]?.slots[s];
+          if (slot) applyOrn(slot);
+        });
+        return;
+      }
+
+      const targetPos = (lastEnteredSlot && lastEnteredSlot.m === cursor.m && lastEnteredSlot.b === cursor.b && lastEnteredSlot.s === cursor.s)
+        ? lastEnteredSlot
+        : cursor;
       const slot = draft.measures[targetPos.m]?.beats[targetPos.b]?.slots[targetPos.s];
       if (!slot) return;
-
-      if (ornKey === 'oshi1') {
-        slot.oshi = slot.oshi === 1 ? 0 : 1;
-      } else if (ornKey === 'oshi2') {
-        slot.oshi = slot.oshi === 2 ? 0 : 2;
-      } else {
-        const val = !(slot as any)[ornKey];
-        if (ornKey === 'kaki' && val) slot.hiki = false;
-        if (ornKey === 'hiki' && val) slot.kaki = false;
-        (slot as any)[ornKey] = val;
-      }
+      applyOrn(slot);
     });
-  }, [cursor, lastEnteredSlot, mutateScore]);
+  }, [cursor, lastEnteredSlot, selectedSlotKeys, mutateScore]);
 
   // Measure operations
   const handleAddMeasure = useCallback(() => {
@@ -947,7 +1015,13 @@ export default function App() {
       const beat = score.measures[mIdx]?.beats[bIdx];
       setCursor({ m: mIdx, b: bIdx, s: sIdx, low: false });
       if (beat) {
-        setInputDiv(beat.div);
+        if (beat.subDiv === '8_16_16') {
+          setInputDiv('8_16_16');
+        } else if (beat.subDiv === '16_16_8') {
+          setInputDiv('16_16_8');
+        } else {
+          setInputDiv(beat.div);
+        }
       }
       setLastEnteredSlot(null);
 
@@ -1287,27 +1361,44 @@ export default function App() {
         v: 'kaki',
         b: 'hiki',
         n: 'trem',
-        '/': 'nagashi'
+        '/': 'nagashi',
+        // Direct Japanese characters (オ, ヲ, ヒ etc.)
+        'オ': 'oshi1',
+        'お': 'oshi1',
+        'ヲ': 'oshi2',
+        'を': 'oshi2',
+        'ヒ': 'hikiiro',
+        'ひ': 'hikiiro',
+        'ア': 'ato',
+        'あ': 'ato',
+        'ツ': 'tsuki',
+        'つ': 'tsuki',
+        'ユ': 'yuri',
+        'ゆ': 'yuri',
+        'ス': 'sukui',
+        'す': 'sukui'
       };
-      if (ornMap[e.key.toLowerCase()]) {
-        handleToggleOrn(ornMap[e.key.toLowerCase()]);
+      if (ornMap[e.key] || ornMap[e.key.toLowerCase()]) {
+        handleToggleOrn(ornMap[e.key] || ornMap[e.key.toLowerCase()]);
         return;
       }
 
       // Arrow navigation (supports Excel-like Shift+Arrow range selection)
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
+        setLastEnteredSlot(null);
         const v = score.view.layout === 'vertical';
 
         let m = cursor.m;
         let b = cursor.b;
         let s = cursor.s;
         const beat = score.measures[m]?.beats[b] || { div: 1 };
+        const slotCount = beat.slots?.length || beat.div;
 
         if (v) {
           if (e.key === 'ArrowDown') {
             s++;
-            if (s >= beat.div) {
+            if (s >= slotCount) {
               s = 0;
               b++;
               if (b >= score.beatsPerMeasure) {
@@ -1324,7 +1415,7 @@ export default function App() {
                 b = score.beatsPerMeasure - 1;
               }
               const prevBeat = score.measures[m]?.beats[b] || { div: 1 };
-              s = prevBeat.div - 1;
+              s = (prevBeat.slots?.length || prevBeat.div) - 1;
             }
           } else if (e.key === 'ArrowLeft') {
             m = Math.min(score.measures.length - 1, m + score.view.perLine);
@@ -1334,7 +1425,7 @@ export default function App() {
         } else {
           if (e.key === 'ArrowRight') {
             s++;
-            if (s >= beat.div) {
+            if (s >= slotCount) {
               s = 0;
               b++;
               if (b >= score.beatsPerMeasure) {
@@ -1351,7 +1442,7 @@ export default function App() {
                 b = score.beatsPerMeasure - 1;
               }
               const prevBeat = score.measures[m]?.beats[b] || { div: 1 };
-              s = prevBeat.div - 1;
+              s = (prevBeat.slots?.length || prevBeat.div) - 1;
             }
           } else if (e.key === 'ArrowDown') {
             m = Math.min(score.measures.length - 1, m + score.view.perLine);
@@ -1452,7 +1543,7 @@ export default function App() {
   ]);
 
   const curSlot = score.measures[cursor.m]?.beats[cursor.b]?.slots[cursor.s] || null;
-  const targetSlot = lastEnteredSlot
+  const targetSlot = (lastEnteredSlot && lastEnteredSlot.m === cursor.m && lastEnteredSlot.b === cursor.b && lastEnteredSlot.s === cursor.s)
     ? score.measures[lastEnteredSlot.m]?.beats[lastEnteredSlot.b]?.slots[lastEnteredSlot.s]
     : curSlot;
 

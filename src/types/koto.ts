@@ -200,10 +200,14 @@ export interface Slot {
   repeat2?: boolean; // 2拍繰り返し記号（く / 𝄥）
 }
 
+export type BeatSubDiv = 'equal' | '8_16_16' | '16_16_8';
+export type InputDivType = 1 | 2 | 3 | 4 | '8_16_16' | '16_16_8';
+
 export interface Beat {
   div: 1 | 2 | 3 | 4;
   slots: Slot[];
   lyrics?: string;
+  subDiv?: BeatSubDiv;
 }
 
 export interface Measure {
@@ -285,11 +289,13 @@ export function createNewSlot(): Slot {
   };
 }
 
-export function createNewBeat(div: 1 | 2 | 3 | 4 = 2): Beat {
+export function createNewBeat(div: 1 | 2 | 3 | 4 = 2, subDiv?: BeatSubDiv): Beat {
+  const count = subDiv === '8_16_16' || subDiv === '16_16_8' ? 3 : div;
   return {
     div,
-    slots: Array.from({ length: div }, () => createNewSlot()),
-    lyrics: ''
+    slots: Array.from({ length: count }, () => createNewSlot()),
+    lyrics: '',
+    subDiv
   };
 }
 

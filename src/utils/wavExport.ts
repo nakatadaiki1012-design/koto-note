@@ -59,11 +59,18 @@ export async function exportScoreToWav(
   score.measures.forEach((ms, mIdx) => {
     ms.beats.forEach((bt, bIdx) => {
       const beatStartTime = (mIdx * beatsPerMeasure + bIdx) * spb;
-      const slotDuration = spb / bt.div;
 
       bt.slots.forEach((sl, sIdx) => {
         if (sl.rest || !sl.notes.length) return;
-        const noteTime = beatStartTime + sIdx * slotDuration;
+
+        let slotTimeOffset = sIdx * (spb / bt.div);
+        if (bt.subDiv === '8_16_16') {
+          slotTimeOffset = sIdx === 0 ? 0 : sIdx === 1 ? (spb * 0.5) : (spb * 0.75);
+        } else if (bt.subDiv === '16_16_8') {
+          slotTimeOffset = sIdx === 0 ? 0 : sIdx === 1 ? (spb * 0.25) : (spb * 0.5);
+        }
+
+        const noteTime = beatStartTime + slotTimeOffset;
 
         sl.notes.forEach(strIdx => {
           if (strIdx < 0 || strIdx >= 13) return;

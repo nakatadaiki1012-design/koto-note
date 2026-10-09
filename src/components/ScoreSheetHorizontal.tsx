@@ -424,7 +424,99 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                           className={`relative flex flex-col w-16 sm:w-18 shrink-0 border-l first:border-l-0 border-stone-900 ${beatHeight}`}
                         >
                           {/* Inner Slots */}
-                          {div === 1 ? (
+                          {beat.subDiv === '8_16_16' ? (
+                            /* 表8分 + 裏16分×2（裏拍のみ2分割） */
+                            <div className="flex flex-1 divide-x divide-stone-300">
+                              {/* 表拍 (8分音符: 幅50%) */}
+                              <div
+                                id={`slot-h-${mIdx}-${bIdx}-0`}
+                                onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, 0, e)}
+                                onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, 0)}
+                                onClick={e => onSlotClick(mIdx, bIdx, 0, false, e.shiftKey, e.ctrlKey || e.metaKey)}
+                                className={`relative flex w-1/2 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                  selectedSlotKeys?.has(`${mIdx}-${bIdx}-0`)
+                                    ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                    : cursor.m === mIdx && cursor.b === bIdx && cursor.s === 0
+                                    ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                    : ''
+                                } ${currentPlayKey === `${mIdx}-${bIdx}-0` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                              >
+                                {renderSlotContentH(beat.slots[0], isArabic, isRubyOn, renderRuby, false)}
+                              </div>
+
+                              {/* 裏拍 (16分音符×2: 幅50%を2分割) */}
+                              <div className="flex w-1/2 divide-x divide-stone-300">
+                                {[1, 2].map(sIdx => {
+                                  const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
+                                  const isMultiSel = selectedSlotKeys?.has(slotKey);
+                                  return (
+                                    <div
+                                      key={sIdx}
+                                      id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
+                                      onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, sIdx, e)}
+                                      onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, sIdx)}
+                                      onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey, e.ctrlKey || e.metaKey)}
+                                      className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                        isMultiSel
+                                          ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                          : cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
+                                          ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                          : ''
+                                      } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                                    >
+                                      {renderSlotContentH(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true)}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : beat.subDiv === '16_16_8' ? (
+                            /* 表16分×2 + 裏8分（表拍のみ2分割） */
+                            <div className="flex flex-1 divide-x divide-stone-300">
+                              {/* 表拍 (16分音符×2: 幅50%を2分割) */}
+                              <div className="flex w-1/2 divide-x divide-stone-300">
+                                {[0, 1].map(sIdx => {
+                                  const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
+                                  const isMultiSel = selectedSlotKeys?.has(slotKey);
+                                  return (
+                                    <div
+                                      key={sIdx}
+                                      id={`slot-h-${mIdx}-${bIdx}-${sIdx}`}
+                                      onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, sIdx, e)}
+                                      onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, sIdx)}
+                                      onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey, e.ctrlKey || e.metaKey)}
+                                      className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                        isMultiSel
+                                          ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                          : cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
+                                          ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                          : ''
+                                      } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                                    >
+                                      {renderSlotContentH(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true)}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* 裏拍 (8分音符: 幅50%) */}
+                              <div
+                                id={`slot-h-${mIdx}-${bIdx}-2`}
+                                onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, 2, e)}
+                                onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, 2)}
+                                onClick={e => onSlotClick(mIdx, bIdx, 2, false, e.shiftKey, e.ctrlKey || e.metaKey)}
+                                className={`relative flex w-1/2 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                  selectedSlotKeys?.has(`${mIdx}-${bIdx}-2`)
+                                    ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                    : cursor.m === mIdx && cursor.b === bIdx && cursor.s === 2
+                                    ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                    : ''
+                                } ${currentPlayKey === `${mIdx}-${bIdx}-2` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                              >
+                                {renderSlotContentH(beat.slots[2], isArabic, isRubyOn, renderRuby, false)}
+                              </div>
+                            </div>
+                          ) : div === 1 ? (
                             /* 4th note (♩) full cell */
                             <div
                               id={`slot-h-${mIdx}-${bIdx}-0`}
@@ -587,8 +679,6 @@ function renderSlotContentH(
     );
   }
 
-  if (!sl.notes || !sl.notes.length) return null;
-
   let lh = '';
   if (sl.oshi === 1) lh += 'オ';
   else if (sl.oshi === 2) lh += 'ヲ';
@@ -601,16 +691,55 @@ function renderSlotContentH(
     if (sl[k]) rh += ORN_MARKS[k];
   });
 
-  const noteCount = sl.notes.length;
+  const noteCount = sl.notes?.length || 0;
   const isChord = noteCount > 1;
   const fingerText = sl.finger ? String(sl.finger) : '';
 
+  // 奏法のみの空マス表示
+  if (noteCount === 0) {
+    if (!lh && !rh && !fingerText) return null;
+
+    const aloneTextSize = small ? 'text-xs' : 'text-base sm:text-lg';
+
+    return (
+      <div className="relative flex items-center justify-center w-full h-full px-0.5 overflow-hidden select-none">
+        <div className="flex items-center justify-center gap-0.5 leading-none">
+          {lh && (
+            <span
+              className={`${aloneTextSize} font-bold text-red-700 font-score leading-none tracking-tight`}
+              title="押手・左手技法"
+            >
+              {lh}
+            </span>
+          )}
+          {rh && (
+            <span
+              className={`${aloneTextSize} font-bold text-stone-900 font-score leading-none tracking-tight`}
+              title="右手技法"
+            >
+              {rh}
+            </span>
+          )}
+        </div>
+        {fingerText && (
+          <span
+            className="absolute right-1 top-0.5 font-sans font-extrabold text-[9px] text-amber-950 bg-amber-200/90 rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none shadow-2xs select-none"
+          >
+            {fingerText}
+          </span>
+        )}
+      </div>
+    );
+  }
+
   // Horizontal chord auto-shrink scaling
   let chordTextSize = '';
+  let lhTextSize = '';
   let scaleTransform = '';
   let gapClass = 'gap-0.5';
 
   if (small) {
+    lhTextSize = isChord ? 'text-[8.5px]' : 'text-[11px]';
     if (noteCount >= 4) {
       chordTextSize = 'text-[7.5px] leading-none';
       scaleTransform = 'scale-[0.8] origin-center';
@@ -626,6 +755,7 @@ function renderSlotContentH(
       chordTextSize = 'text-xs leading-none font-bold';
     }
   } else {
+    lhTextSize = isChord ? 'text-xs sm:text-sm' : 'text-sm sm:text-base';
     if (noteCount >= 4) {
       chordTextSize = 'text-[9px] sm:text-[10px] leading-none font-extrabold';
       scaleTransform = 'scale-[0.85] origin-center';
@@ -644,19 +774,9 @@ function renderSlotContentH(
 
   return (
     <div className="relative flex items-center justify-center w-full h-full px-0.5 overflow-hidden">
-      {/* Left-hand marks on the left */}
-      {lh && (
-        <span
-          className="absolute left-0.5 top-1/2 -translate-y-1/2 text-[10px] sm:text-xs font-black text-red-700 leading-none font-score select-none tracking-tighter"
-          title="押手・左手技法"
-        >
-          {lh}
-        </span>
-      )}
-
       {/* Right-hand ornament (top right) */}
       {rh && (
-        <span className="absolute right-0.5 top-0.5 text-[9px] font-bold text-red-700 leading-none font-score select-none">
+        <span className="absolute right-0.5 top-0.5 text-[9px] font-bold text-stone-900 leading-none font-score select-none">
           {rh}
         </span>
       )}
@@ -671,15 +791,22 @@ function renderSlotContentH(
         </span>
       )}
 
-      {/* Main notes (side by side for chords with auto-shrink scaling) */}
+      {/* Main notes (side by side with technique katakana adjacent) */}
       <div
         className={`w-full max-w-full flex items-center justify-center shrink-0 ${scaleTransform}`}
       >
         <div
-          className={`flex items-center justify-center ${gapClass} select-none font-score leading-none ${
-            lh ? 'pl-2' : ''
-          }`}
+          className={`flex items-center justify-center ${gapClass} select-none font-score leading-none`}
         >
+          {lh && (
+            <span
+              className={`${lhTextSize} shrink-0 font-bold text-red-700 font-score tracking-tighter mr-0.5 select-none`}
+              title="押手・左手技法"
+            >
+              {lh}
+            </span>
+          )}
+
           {sl.notes.map((n: number, idx: number) => {
             const char = isArabic ? String(n + 1) : KANJI_STRINGS[n];
             return (

@@ -12,7 +12,8 @@ import {
   LeftHandOrn,
   RightHandOrn,
   getPitches,
-  noteName
+  noteName,
+  InputDivType
 } from '../types/koto';
 import {
   Play,
@@ -41,7 +42,7 @@ interface DockProps {
   score: KotoScore;
   currentCursor: { m: number; b: number; s: number };
   isPlaying: boolean;
-  inputDiv: 1 | 2 | 3 | 4;
+  inputDiv: InputDivType;
   isChordMode: boolean;
   selectedOrns: Record<string, boolean>;
   canUndo: boolean;
@@ -55,7 +56,7 @@ interface DockProps {
   onPlayToggle: () => void;
   onStop: () => void;
   onRewind: () => void;
-  onSetInputDiv: (div: 1 | 2 | 3 | 4) => void;
+  onSetInputDiv: (div: InputDivType) => void;
   onToggleChordMode: () => void;
   onInputRest: () => void;
   onInputTie: () => void;
@@ -230,17 +231,19 @@ export const Dock: React.FC<DockProps> = ({
         <div className="flex items-center gap-0.5 sm:gap-1">
           {[
             { div: 1, label: '♩', title: '4分音符 (1拍1音 / Qキー)' },
-            { div: 2, label: '♪♪', title: '8分音符 (1マスを2音に分割 / Wキー)' },
-            { div: 3, label: '3連', title: '3連符 (1マスを3音に分割 / Eキー)' },
-            { div: 4, label: '♬', title: '16分音符 (1マスを4音に分割 / Rキー)' }
+            { div: 2, label: '♪♪', title: '8分音符 (1拍を2音に等分 / Wキー)' },
+            { div: '8_16_16', label: '♪♬', title: '裏拍のみ2分割 (表8分＋裏16分×2)' },
+            { div: '16_16_8', label: '♬♪', title: '表拍のみ2分割 (表16分×2＋裏8分)' },
+            { div: 3, label: '3連', title: '3連符 (1拍を3音に分割 / Eキー)' },
+            { div: 4, label: '♬', title: '16分音符 (1拍を4音に分割 / Rキー)' }
           ].map(opt => (
             <button
-              key={opt.div}
-              onClick={() => onSetInputDiv(opt.div as any)}
+              key={String(opt.div)}
+              onClick={() => onSetInputDiv(opt.div as InputDivType)}
               title={opt.title}
               className={`rounded px-1.5 py-0.5 text-xs font-bold transition-all cursor-pointer ${
                 inputDiv === opt.div
-                  ? 'bg-indigo-700 text-white shadow-2xs'
+                  ? 'bg-indigo-700 text-white shadow-2xs ring-1 ring-indigo-900'
                   : 'border border-stone-200 bg-white text-stone-700 hover:border-stone-400'
               }`}
             >

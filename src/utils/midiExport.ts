@@ -63,17 +63,34 @@ export function exportScoreToMidi(score: KotoScore): Blob {
   score.measures.forEach((m, mIdx) => {
     m.beats.forEach((b, bIdx) => {
       const beatTicks = (mIdx * beatsPerMeasure + bIdx) * ticksPerQuarter;
-      const slotTicks = Math.round(ticksPerQuarter / b.div);
 
       b.slots.forEach((sl, sIdx) => {
         if (sl.rest || !sl.notes.length) return;
-        const noteStartTick = beatTicks + sIdx * slotTicks;
-        let noteDurationTicks = Math.max(20, Math.round(slotTicks * 0.9));
+
+        let slotTickOffset = sIdx * Math.round(ticksPerQuarter / b.div);
+        let currentSlotTicks = Math.round(ticksPerQuarter / b.div);
+
+        if (b.subDiv === '8_16_16') {
+          slotTickOffset = sIdx === 0 ? 0 : sIdx === 1 ? Math.round(ticksPerQuarter * 0.5) : Math.round(ticksPerQuarter * 0.75);
+          currentSlotTicks = sIdx === 0 ? Math.round(ticksPerQuarter * 0.5) : Math.round(ticksPerQuarter * 0.25);
+        } else if (b.subDiv === '16_16_8') {
+          slotTickOffset = sIdx === 0 ? 0 : sIdx === 1 ? Math.round(ticksPerQuarter * 0.25) : Math.round(ticksPerQuarter * 0.5);
+          currentSlotTicks = sIdx === 2 ? Math.round(ticksPerQuarter * 0.5) : Math.round(ticksPerQuarter * 0.25);
+        }
+
+        const noteStartTick = beatTicks + slotTickOffset;
+        let noteDurationTicks = Math.max(20, Math.round(currentSlotTicks * 0.9));
         // Extend duration if subsequent slots in this beat are tie or empty (裏拍空白 / 延音線)
         for (let nextS = sIdx + 1; nextS < b.slots.length; nextS++) {
           const nextSlot = b.slots[nextS];
           if (nextSlot.tie || (!nextSlot.rest && (!nextSlot.notes || nextSlot.notes.length === 0))) {
-            noteDurationTicks += slotTicks;
+            let nextSlotTicks = Math.round(ticksPerQuarter / b.div);
+            if (b.subDiv === '8_16_16') {
+              nextSlotTicks = nextS === 0 ? Math.round(ticksPerQuarter * 0.5) : Math.round(ticksPerQuarter * 0.25);
+            } else if (b.subDiv === '16_16_8') {
+              nextSlotTicks = nextS === 2 ? Math.round(ticksPerQuarter * 0.5) : Math.round(ticksPerQuarter * 0.25);
+            }
+            noteDurationTicks += nextSlotTicks;
           } else {
             break;
           }

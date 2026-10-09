@@ -454,7 +454,99 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                           className="relative flex flex-col border-t first:border-t-0 border-stone-900"
                         >
                           {/* Inner Slots */}
-                          {div === 1 ? (
+                          {beat.subDiv === '8_16_16' ? (
+                            /* 表8分 + 裏16分×2（裏拍のみ2分割: 表拍は8分音符マスの縦幅をそのまま維持） */
+                            <div className="flex flex-col h-full divide-y divide-stone-300">
+                              {/* 表拍: 8分音符マス（上半分 50%） */}
+                              <div
+                                id={`slot-${mIdx}-${bIdx}-0`}
+                                onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, 0, e)}
+                                onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, 0)}
+                                onClick={e => onSlotClick(mIdx, bIdx, 0, false, e.shiftKey, e.ctrlKey || e.metaKey)}
+                                className={`relative flex h-1/2 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                  selectedSlotKeys?.has(`${mIdx}-${bIdx}-0`)
+                                    ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                    : cursor.m === mIdx && cursor.b === bIdx && cursor.s === 0
+                                    ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                    : ''
+                                } ${currentPlayKey === `${mIdx}-${bIdx}-0` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                              >
+                                {renderSlotContent(beat.slots[0], isArabic, isRubyOn, renderRuby, false, false)}
+                              </div>
+
+                              {/* 裏拍: 16分音符マス×2（下半分 50% を縦2分割） */}
+                              <div className="flex flex-col h-1/2 divide-y divide-stone-300">
+                                {[1, 2].map(sIdx => {
+                                  const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
+                                  const isMultiSel = selectedSlotKeys?.has(slotKey);
+                                  return (
+                                    <div
+                                      key={sIdx}
+                                      id={`slot-${mIdx}-${bIdx}-${sIdx}`}
+                                      onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, sIdx, e)}
+                                      onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, sIdx)}
+                                      onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey, e.ctrlKey || e.metaKey)}
+                                      className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                        isMultiSel
+                                          ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                          : cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
+                                          ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                          : ''
+                                      } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                                    >
+                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, true)}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : beat.subDiv === '16_16_8' ? (
+                            /* 表16分×2 + 裏8分（表拍のみ2分割） */
+                            <div className="flex flex-col h-full divide-y divide-stone-300">
+                              {/* 表拍: 16分音符マス×2（上半分 50% を縦2分割） */}
+                              <div className="flex flex-col h-1/2 divide-y divide-stone-300">
+                                {[0, 1].map(sIdx => {
+                                  const slotKey = `${mIdx}-${bIdx}-${sIdx}`;
+                                  const isMultiSel = selectedSlotKeys?.has(slotKey);
+                                  return (
+                                    <div
+                                      key={sIdx}
+                                      id={`slot-${mIdx}-${bIdx}-${sIdx}`}
+                                      onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, sIdx, e)}
+                                      onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, sIdx)}
+                                      onClick={e => onSlotClick(mIdx, bIdx, sIdx, false, e.shiftKey, e.ctrlKey || e.metaKey)}
+                                      className={`relative flex flex-1 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                        isMultiSel
+                                          ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                          : cursor.m === mIdx && cursor.b === bIdx && cursor.s === sIdx
+                                          ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                          : ''
+                                      } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                                    >
+                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, true)}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* 裏拍: 8分音符マス（下半分 50%） */}
+                              <div
+                                id={`slot-${mIdx}-${bIdx}-2`}
+                                onMouseDown={e => onSlotMouseDown?.(mIdx, bIdx, 2, e)}
+                                onMouseEnter={() => onSlotMouseEnter?.(mIdx, bIdx, 2)}
+                                onClick={e => onSlotClick(mIdx, bIdx, 2, false, e.shiftKey, e.ctrlKey || e.metaKey)}
+                                className={`relative flex h-1/2 flex-col items-center justify-center cursor-pointer transition-colors ${
+                                  selectedSlotKeys?.has(`${mIdx}-${bIdx}-2`)
+                                    ? 'bg-amber-200/90 ring-2 ring-amber-600 ring-inset'
+                                    : cursor.m === mIdx && cursor.b === bIdx && cursor.s === 2
+                                    ? 'bg-indigo-100 ring-2 ring-indigo-600 ring-inset'
+                                    : ''
+                                } ${currentPlayKey === `${mIdx}-${bIdx}-2` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
+                              >
+                                {renderSlotContent(beat.slots[2], isArabic, isRubyOn, renderRuby, false, false)}
+                              </div>
+                            </div>
+                          ) : div === 1 ? (
                             /* 4th note (♩): 1拍全体を1マスとして表示（上下分割線なし） */
                             <div
                               id={`slot-${mIdx}-${bIdx}-0`}
@@ -691,9 +783,7 @@ function renderSlotContent(
     );
   }
 
-  if (!sl.notes || !sl.notes.length) return null;
-
-  // Left-hand marks (オ, ヲ, ア, ハ, ヒ, ツ, ユ) -> 漢数字の左側に大きく表示するのがセオリー
+  // Left-hand marks (オ, ヲ, ア, ハ, ヒ, ツ, ユ)
   let lh = '';
   if (sl.oshi === 1) lh += 'オ';
   else if (sl.oshi === 2) lh += 'ヲ';
@@ -709,17 +799,61 @@ function renderSlotContent(
 
   // Finger number (e.g. 3 for middle finger 中指)
   const fingerText = sl.finger ? String(sl.finger) : '';
-
-  const noteCount = sl.notes.length;
+  const noteCount = sl.notes?.length || 0;
   const isChord = noteCount > 1;
+
+  // 奏法のみの空マス表示（オ・ヲ・ヒ・スなどが空白セルに単独で入っている場合）
+  if (noteCount === 0) {
+    if (!lh && !rh && !fingerText) return null;
+
+    const aloneTextSize = extraCompact
+      ? 'text-xs'
+      : small
+      ? 'text-sm'
+      : 'text-lg sm:text-xl';
+
+    return (
+      <div className="relative flex items-center justify-center w-full h-full px-0.5 overflow-hidden select-none">
+        <div className="flex items-center justify-center gap-0.5 leading-none">
+          {lh && (
+            <span
+              className={`${aloneTextSize} font-bold text-red-700 font-score leading-none tracking-tight`}
+              title="押手・左手技法"
+            >
+              {lh}
+            </span>
+          )}
+          {rh && (
+            <span
+              className={`${aloneTextSize} font-bold text-stone-900 font-score leading-none tracking-tight`}
+              title="右手技法"
+            >
+              {rh}
+            </span>
+          )}
+        </div>
+        {fingerText && (
+          <span
+            className={`absolute right-0.5 top-0.5 font-sans font-extrabold ${
+              extraCompact ? 'text-[8px] w-2.5 h-2.5' : 'text-[9px] w-3 h-3'
+            } text-amber-950 bg-amber-200/90 rounded-full flex items-center justify-center leading-none shadow-2xs`}
+          >
+            {fingerText}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   // Dynamic chord text sizing & auto-shrink scaling to prevent overflowing horizontal cell bounds
   let chordTextSize = '';
+  let lhTextSize = '';
   let scaleTransform = '';
   let gapClass = 'gap-0.5';
 
   if (extraCompact) {
     // 16th vertical 4-division
+    lhTextSize = isChord ? 'text-[8.5px]' : 'text-[10px]';
     if (noteCount >= 4) {
       chordTextSize = 'text-[7px] leading-none';
       scaleTransform = 'scale-[0.72] origin-center';
@@ -737,6 +871,7 @@ function renderSlotContent(
     }
   } else if (small) {
     // Triplets or 16th grid
+    lhTextSize = isChord ? 'text-[9.5px]' : 'text-xs sm:text-[13px]';
     if (noteCount >= 4) {
       chordTextSize = 'text-[8px] leading-none';
       scaleTransform = 'scale-[0.78] origin-center';
@@ -753,6 +888,7 @@ function renderSlotContent(
     }
   } else {
     // Standard quarter or 8th note slots
+    lhTextSize = isChord ? 'text-xs sm:text-sm' : 'text-base sm:text-lg';
     if (noteCount >= 4) {
       chordTextSize = 'text-[10px] sm:text-xs leading-none font-extrabold';
       scaleTransform = 'scale-[0.82] origin-center';
@@ -771,24 +907,12 @@ function renderSlotContent(
 
   return (
     <div className="relative flex items-center justify-center w-full h-full px-0.5 overflow-hidden">
-      {/* Left-hand marks (漢数字の左側に大きく表示: オ、ヲ、アなど) */}
-      {lh && (
-        <span
-          className={`absolute left-0.5 top-1/2 -translate-y-1/2 ${
-            extraCompact ? 'text-[8px]' : 'text-[10px] sm:text-xs'
-          } font-black text-red-700 leading-none font-score select-none tracking-tighter`}
-          title="押手・左手技法"
-        >
-          {lh}
-        </span>
-      )}
-
       {/* Right-hand ornament (top right) */}
       {rh && (
         <span
           className={`absolute right-0.5 top-0.5 ${
             extraCompact ? 'text-[7px]' : 'text-[9px]'
-          } font-bold text-red-700 leading-none font-score select-none`}
+          } font-bold text-stone-900 leading-none font-score select-none`}
         >
           {rh}
         </span>
@@ -806,15 +930,23 @@ function renderSlotContent(
         </span>
       )}
 
-      {/* Main note kanji/number with auto-shrinking horizontally for chords */}
+      {/* Main note kanji/number with technique katakana placed adjacent (ｦ七のように漢数字に準ずる大きさで隣に表示) */}
       <div
         className={`w-full max-w-full flex items-center justify-center shrink-0 ${scaleTransform}`}
       >
         <div
-          className={`flex items-center justify-center ${gapClass} select-none font-score leading-none ${
-            lh && !extraCompact ? 'pl-2' : ''
-          }`}
+          className={`flex items-center justify-center ${gapClass} select-none font-score leading-none`}
         >
+          {/* 左手奏法カタカナ: 漢数字のすぐ左隣に漢数字に近い大きさで配置 */}
+          {lh && (
+            <span
+              className={`${lhTextSize} shrink-0 font-bold text-red-700 font-score tracking-tighter mr-0.5 select-none`}
+              title="押手・左手技法"
+            >
+              {lh}
+            </span>
+          )}
+
           {sl.notes.map((n: number, idx: number) => {
             const char = isArabic ? String(n + 1) : KANJI_STRINGS[n];
             return (
