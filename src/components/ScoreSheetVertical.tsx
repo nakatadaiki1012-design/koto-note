@@ -446,13 +446,18 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                     {measure.beats.map((beat, bIdx) => {
                       const div = beat.div;
                       const beatHeight = isRubyOn ? 76 : 60;
+                      const isLyricsRight = score.view.showLyrics && score.view.lyricsPosition !== 'bottom';
+                      const isLyricsBottom = score.view.showLyrics && score.view.lyricsPosition === 'bottom';
+                      const beatWidth = isLyricsRight ? 96 : 74;
 
                       return (
                         <div
                           key={bIdx}
-                          style={{ height: `${beatHeight}px`, width: '74px' }}
-                          className="relative flex flex-col border-t first:border-t-0 border-stone-900"
+                          style={{ height: `${beatHeight}px`, width: `${beatWidth}px` }}
+                          className="relative flex flex-row border-t first:border-t-0 border-stone-900"
                         >
+                          {/* Notes Cell Area (Left) */}
+                          <div className="flex-1 flex flex-col h-full min-w-0">
                           {/* Inner Slots */}
                           {beat.subDiv === '8_16_16' ? (
                             /* 表8分 + 裏16分×2（裏拍のみ2分割: 表拍は8分音符マスの縦幅をそのまま維持） */
@@ -698,8 +703,10 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                             </div>
                           )}
 
-                          {/* Optional Lyrics row */}
-                          {score.view.showLyrics && (
+                          </div>
+
+                          {/* Optional Lyrics row at bottom */}
+                          {isLyricsBottom && (
                             <input
                               type="text"
                               value={beat.lyrics || ''}
@@ -707,6 +714,23 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                               placeholder="歌詞"
                               className="w-full text-center text-[10px] font-sans border-t border-dotted border-stone-400 bg-transparent px-0.5 focus:bg-white focus:outline-none"
                             />
+                          )}
+
+                          {/* Thin Right Lyrics Column (マスの右側に薄い列を挿入して縦書き表示・入力) */}
+                          {isLyricsRight && (
+                            <div
+                              className="w-5.5 shrink-0 border-l border-stone-300 bg-stone-50/50 flex items-center justify-center relative print:bg-transparent"
+                              title="歌詞（縦書き）"
+                            >
+                              <input
+                                type="text"
+                                value={beat.lyrics || ''}
+                                onChange={e => onLyricsChange && onLyricsChange(mIdx, bIdx, e.target.value)}
+                                placeholder="詞"
+                                style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}
+                                className="w-full h-full text-center text-[10px] font-score text-stone-800 bg-transparent focus:bg-white focus:outline-none select-none tracking-tighter placeholder:text-stone-300/80 print:placeholder-transparent"
+                              />
+                            </div>
                           )}
                         </div>
                       );

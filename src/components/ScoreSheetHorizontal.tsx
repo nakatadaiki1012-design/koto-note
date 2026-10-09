@@ -288,8 +288,8 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
               {row.measures[0] + 1}
             </div>
 
-            {/* Row Measures Body */}
-            <div className="flex flex-1 border border-stone-900 bg-stone-50/60 shadow-xs overflow-x-auto">
+            {/* Row Measures Body (原稿用紙風：行内に全小節が横に収まり、スクロールバーを排除) */}
+            <div className="flex flex-1 border border-stone-900 bg-[#fbfaf6] shadow-xs">
               {row.measures.map(mIdx => {
                 const measure = score.measures[mIdx];
                 const isSelectedMeasure =
@@ -300,7 +300,8 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                   <div
                     key={mIdx}
                     id={`measure-h-${mIdx}`}
-                    className={`relative flex border-l-[2.5px] first:border-l-0 border-stone-900 transition-colors ${
+                    style={{ width: `${100 / perLine}%`, flexBasis: `${100 / perLine}%` }}
+                    className={`relative flex flex-1 min-w-0 border-l-[2px] first:border-l-0 border-stone-900 transition-colors ${
                       mIdx === score.measures.length - 1 ? 'border-r-4 border-double border-stone-950' : ''
                     } ${
                       isSelectedMeasure
@@ -421,7 +422,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                       return (
                         <div
                           key={bIdx}
-                          className={`relative flex flex-col w-16 sm:w-18 shrink-0 border-l first:border-l-0 border-stone-900 ${beatHeight}`}
+                          className={`relative flex flex-1 min-w-0 flex-col border-l first:border-l-0 border-stone-300 ${beatHeight}`}
                         >
                           {/* Inner Slots */}
                           {beat.subDiv === '8_16_16' ? (
@@ -632,6 +633,15 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                   </div>
                 );
               })}
+
+              {/* 原稿用紙の余白マス（行の残り小節分を薄い罫線で埋めて均等グリッドを維持） */}
+              {Array.from({ length: perLine - row.measures.length }).map((_, emptyIdx) => (
+                <div
+                  key={`empty-${emptyIdx}`}
+                  style={{ width: `${100 / perLine}%`, flexBasis: `${100 / perLine}%` }}
+                  className="border-l border-stone-300/60 bg-stone-50/20 min-w-0 shrink-0"
+                />
+              ))}
             </div>
           </div>
         ))}

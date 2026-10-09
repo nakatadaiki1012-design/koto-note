@@ -338,17 +338,33 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>仮想琴台</span>
               </button>
 
-              <button
-                onClick={() => onUpdateView({ showLyrics: !view.showLyrics })}
-                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold cursor-pointer border transition-colors ${
-                  view.showLyrics
-                    ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
-                    : 'border-stone-200 bg-white text-stone-500'
-                }`}
-              >
-                <Type className="h-3 w-3" />
-                <span>歌詞行</span>
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => onUpdateView({ showLyrics: !view.showLyrics })}
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold cursor-pointer border transition-colors ${
+                    view.showLyrics
+                      ? 'border-indigo-300 bg-indigo-50 text-indigo-900 font-bold'
+                      : 'border-stone-200 bg-white text-stone-500 hover:text-stone-800'
+                  }`}
+                  title="歌詞の表示・非表示を切り替え"
+                >
+                  <Type className="h-3 w-3" />
+                  <span>歌詞</span>
+                </button>
+                {view.showLyrics && (
+                  <button
+                    onClick={() =>
+                      onUpdateView({
+                        lyricsPosition: view.lyricsPosition === 'bottom' ? 'right' : 'bottom'
+                      })
+                    }
+                    className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold border border-indigo-200 bg-white text-indigo-800 hover:bg-indigo-50 cursor-pointer shadow-2xs"
+                    title="歌詞の位置を切り替え（マスの右側に薄い縦列 / マスの下）"
+                  >
+                    <span>位置: {view.lyricsPosition === 'bottom' ? 'マスの下' : 'マスの右列'}</span>
+                  </button>
+                )}
+              </div>
 
               {/* Zoom buttons */}
               <div className="flex items-center rounded-lg border border-stone-200 bg-white p-0.5">

@@ -228,6 +228,7 @@ export interface ViewSettings {
   chart: 'off' | 'on';
   perLine: number;
   showLyrics: boolean;
+  lyricsPosition?: 'right' | 'bottom'; // 歌詞の位置: 'right' (マスの右側に薄い列) | 'bottom' (マスの下)
   showKotoBoard: boolean;
   zoom: number;
   sixteenthLayout?: 'vertical' | 'grid'; // 16分音符の配置: 'vertical' (縦4段：8分音符より縦に小さく表示) | 'grid' (2x2横分割)
@@ -314,6 +315,7 @@ export function getDefaultView(): ViewSettings {
     chart: 'on',
     perLine: 4,
     showLyrics: false,
+    lyricsPosition: 'right',
     showKotoBoard: false,
     zoom: 1,
     schoolStyle: 'standard'
@@ -393,6 +395,7 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
     chart: v.chart === 'off' ? 'off' : 'on',
     perLine: typeof v.perLine === 'number' && v.perLine > 0 ? clamp(Math.round(v.perLine), 1, 8) : 4,
     showLyrics: !!v.showLyrics,
+    lyricsPosition: v.lyricsPosition === 'bottom' ? 'bottom' : 'right',
     showKotoBoard: !!v.showKotoBoard,
     zoom: typeof v.zoom === 'number' && !isNaN(v.zoom) && v.zoom >= 0.3 ? clamp(v.zoom, 0.4, 2.0) : 1.0,
     fontStyle: ['shippori', 'kaisei', 'yuji', 'klee', 'noto'].includes(v.fontStyle) ? v.fontStyle : 'shippori',
@@ -408,17 +411,19 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
     for (let bIdx = 0; bIdx < beatsPerMeasure; bIdx++) {
       const b = rawBeats[bIdx];
       let div = [1, 2, 3, 4].includes(b?.div) ? b.div : 2;
+      const subDiv = ['equal', '8_16_16', '16_16_8'].includes(b?.subDiv) ? b.subDiv : undefined;
       const rawSlots = Array.isArray(b?.slots) ? b.slots : [];
       // If beat was div 1 and has no notes, rest, or tie, normalize to div 2 (8th-note units)
-      if (div === 1 && rawSlots.length <= 1) {
+      if (div === 1 && rawSlots.length <= 1 && !subDiv) {
         const s0 = rawSlots[0];
         const isEmpty = !s0 || (!s0.notes?.length && !s0.rest && !s0.tie && !s0.repeat1 && !s0.repeat2);
         if (isEmpty) {
           div = 2;
         }
       }
+      const slotCount = subDiv === '8_16_16' || subDiv === '16_16_8' ? 3 : div;
       const slots: Slot[] = [];
-      for (let sIdx = 0; sIdx < div; sIdx++) {
+      for (let sIdx = 0; sIdx < slotCount; sIdx++) {
         const sl = rawSlots[sIdx];
         if (sl && typeof sl === 'object') {
           slots.push({
@@ -457,7 +462,8 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
       beats.push({
         div,
         slots,
-        lyrics: typeof b?.lyrics === 'string' ? b.lyrics : ''
+        lyrics: typeof b?.lyrics === 'string' ? b.lyrics : '',
+        subDiv
       });
     }
     return { beats };
