@@ -3,32 +3,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { KotoScore, getPitches, midiToHz } from '../types/koto';
-import { kotoSynth } from '../audio/kotoSynth';
+import { KotoScore, getPitches } from '../types/koto';
+import { kotoSynth, applyBend } from '../audio/kotoSynth';
+import { buildTimeline } from '../audio/timeline';
+import { voiceSlot, VoiceSink } from '../audio/voicing';
 
 export async function exportScoreToWav(
   score: KotoScore,
   onProgress?: (percent: number) => void
 ): Promise<Blob> {
-  const bpm = score.tempo;
-  const spb = 60 / bpm; // seconds per beat
-  const beatsPerMeasure = score.beatsPerMeasure;
-  const totalMeasures = score.measures.length;
-  const totalBeats = totalMeasures * beatsPerMeasure;
+  const spb = 60 / score.tempo; // seconds per beat
+  const { items, totalBeats } = buildTimeline(score);
   const totalDuration = totalBeats * spb + 3.0; // add 3 seconds of natural ring-out reverberation
 
   const sampleRate = 44100;
   const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalDuration * sampleRate), sampleRate);
-
   const pitches = getPitches(score);
 
-  // Re-create master filter path in offline context
+  // 画面再生と同じ音の通り道（胴鳴り → 爪のツヤ → ローカット → コンプレッサー）
   const masterGain = offlineCtx.createGain();
   masterGain.gain.value = 0.9;
 
   const comp = offlineCtx.createDynamicsCompressor();
   comp.threshold.value = -14;
+  comp.knee.value = 12;
   comp.ratio.value = 4;
+  comp.attack.value = 0.003;
+  comp.release.value = 0.25;
 
   const hp = offlineCtx.createBiquadFilter();
   hp.type = 'highpass';
@@ -40,76 +41,62 @@ export async function exportScoreToWav(
   bodyFilter.Q.value = 1.2;
   bodyFilter.gain.value = 3.5;
 
-  bodyFilter.connect(hp);
+  const presenceFilter = offlineCtx.createBiquadFilter();
+  presenceFilter.type = 'peaking';
+  presenceFilter.frequency.value = 2600;
+  presenceFilter.Q.value = 1.0;
+  presenceFilter.gain.value = 2.0;
+
+  bodyFilter.connect(presenceFilter);
+  presenceFilter.connect(hp);
   hp.connect(comp);
   comp.connect(masterGain);
   masterGain.connect(offlineCtx.destination);
 
-  // Pre-generate buffers for offline context
-  const bufferCache = new Map<number, AudioBuffer>();
-  const getBuf = (midi: number) => {
-    const key = Math.round(midi);
+  const bufferCache = new Map<string, AudioBuffer>();
+  const getBuf = (midi: number, bright: number) => {
+    const key = `${Math.round(midi * 100)}:${bright.toFixed(2)}`;
     if (!bufferCache.has(key)) {
-      bufferCache.set(key, kotoSynth.renderStringSample(offlineCtx, midi, 0.88));
+      bufferCache.set(key, kotoSynth.renderStringSample(offlineCtx, midi, bright));
     }
     return bufferCache.get(key)!;
   };
 
-  // Schedule notes
-  score.measures.forEach((ms, mIdx) => {
-    ms.beats.forEach((bt, bIdx) => {
-      const beatStartTime = (mIdx * beatsPerMeasure + bIdx) * spb;
+  // 同じ絃を弾き直したら前の響きを止める（画面再生と同じ）
+  const voices = new Map<number, GainNode>();
+  const dampVoice = (str: number, t: number, tc: number) => {
+    const g = voices.get(str);
+    if (g) {
+      g.gain.setTargetAtTime(0, t, tc);
+      voices.delete(str);
+    }
+  };
 
-      bt.slots.forEach((sl, sIdx) => {
-        if (sl.rest || !sl.notes.length) return;
+  const sink: VoiceSink = {
+    pluck: (str, midi, t, vel, bright, bend, pan) => {
+      dampVoice(str, t, 0.03);
+      const src = offlineCtx.createBufferSource();
+      src.buffer = getBuf(midi, bright);
+      if (bend && src.detune) applyBend(offlineCtx, src, t, bend);
+      const g = offlineCtx.createGain();
+      g.gain.value = vel;
+      const panner = offlineCtx.createStereoPanner();
+      panner.pan.value = pan * 0.32;
+      src.connect(g);
+      g.connect(panner);
+      panner.connect(bodyFilter);
+      src.start(t);
+      voices.set(str, g);
+    },
+    damp: (str, t) => dampVoice(str, t, 0.04),
+    dampAll: t => {
+      Array.from(voices.keys()).forEach(str => dampVoice(str, t, 0.05));
+    }
+  };
 
-        let slotTimeOffset = sIdx * (spb / bt.div);
-        if (bt.subDiv === '8_16_16') {
-          slotTimeOffset = sIdx === 0 ? 0 : sIdx === 1 ? (spb * 0.5) : (spb * 0.75);
-        } else if (bt.subDiv === '16_16_8') {
-          slotTimeOffset = sIdx === 0 ? 0 : sIdx === 1 ? (spb * 0.25) : (spb * 0.5);
-        }
-
-        const noteTime = beatStartTime + slotTimeOffset;
-
-        sl.notes.forEach(strIdx => {
-          if (strIdx < 0 || strIdx >= 13) return;
-          const basePitch = pitches[strIdx];
-          const actualPitch = basePitch + (sl.ato ? 0 : sl.oshi || 0);
-
-          const src = offlineCtx.createBufferSource();
-          src.buffer = getBuf(actualPitch);
-
-          // Apply left-hand ornaments if any
-          if (sl.ato && src.detune) {
-            const amt = 100 * (sl.oshi || 1);
-            const t1 = noteTime + 0.15;
-            src.detune.setValueAtTime(0, noteTime);
-            src.detune.setValueAtTime(0, t1);
-            src.detune.linearRampToValueAtTime(amt, t1 + 0.15);
-          } else if (sl.hanashi && src.detune) {
-            const amt = 100 * (sl.oshi || 1);
-            const t1 = noteTime + 0.15;
-            src.detune.setValueAtTime(amt, noteTime);
-            src.detune.setValueAtTime(amt, t1);
-            src.detune.linearRampToValueAtTime(0, t1 + 0.12);
-          }
-
-          const g = offlineCtx.createGain();
-          g.gain.value = 0.8;
-
-          // Stereo panning
-          const pan = offlineCtx.createStereoPanner();
-          pan.pan.value = ((strIdx - 6) / 6) * 0.35;
-
-          src.connect(g);
-          g.connect(pan);
-          pan.connect(bodyFilter);
-
-          src.start(noteTime);
-        });
-      });
-    });
+  items.forEach(item => {
+    if (!item.sound) return;
+    voiceSlot(sink, item.slot, item.beat * spb, item.durBeats * spb, pitches, spb);
   });
 
   if (onProgress) onProgress(30);

@@ -153,22 +153,25 @@ export const ORN_LABELS: Record<string, { short: string; label: string; desc: st
   hikiiro: { short: 'ヒ', label: '引き色', desc: '弾いた後に少し音を下げて戻す', key: 'I' },
   tsuki: { short: 'ツ', label: '突き色', desc: '弾いた直後に一瞬押してすぐ戻す', key: 'O' },
   yuri: { short: 'ユ', label: '揺り色', desc: '余韻を指で揺らす（ビブラート）', key: 'M' },
-  pizz: { short: '＋', label: 'ピチカート', desc: '爪をつけない指肉（左手等）ではじく', key: 'P' },
-  keshi: { short: '消', label: '消音（止め）', desc: '弾いた直後に手のひらや指で響きを止める', key: 'Q' },
-  harm: { short: '◇', label: 'ハーモニクス', desc: '絃の中央を軽く触れて弾き、倍音を鳴らす（当り音）', key: 'W' },
+  pizz: { short: '＋', label: 'ピチカート', desc: '爪をつけない指肉（左手等）ではじく', key: '' },
+  keshi: { short: '消', label: '消音（止め）', desc: '弾いた直後に手のひらや指で響きを止める', key: '' },
+  harm: { short: '◇', label: 'ハーモニクス', desc: '絃の中央を軽く触れて弾き、倍音を鳴らす（当り音）', key: '' },
   sukui: { short: 'ス', label: 'スクイ', desc: '裏爪で手前にすくい上げるように弾く', key: 'C' },
   kaki: { short: '掻', label: '掻き爪', desc: '中指・薬指等で隣の弦と連続して弾く', key: 'V' },
   hiki: { short: '引', label: '引き爪', desc: '手前へ連続して引く', key: 'B' },
   trem: { short: '〰', label: 'トレモロ', desc: '爪を細かく往復させて連続打弦', key: 'N' },
   nagashi: { short: '流', label: '流し爪', desc: '巾から順に滑らせてこの弦で止める', key: '/' },
-  wari: { short: 'ワ', label: '割爪', desc: '親指と人差指で隣り合う弦を割るように弾く（正派の散らし）', key: 'G' },
-  suri: { short: '摺', label: 'スリ爪', desc: '人差指と中指の爪裏で弦を擦る（風情の効果音）', key: 'H' },
-  ren: { short: '連', label: '連引き', desc: '複数の弦を連続して滑らかに流し弾く（引連・裏連・ツレ）', key: 'J' },
-  chirashi: { short: '散', label: '散らし爪', desc: '爪先で素早く弦を擦りつける', key: 'K' },
-  awase: { short: '合', label: '合わせ爪', desc: '親指と中指で2本の絃を同時に挟み弾く', key: 'E' },
-  haya: { short: 'ハ', label: '早爪', desc: '親指を連続して素早く打弦する（山田流等）', key: 'R' },
-  muko: { short: '向', label: '向う弾き', desc: '山田流丸爪で絃を前方へ押し出すように弾く', key: 'T' }
+  wari: { short: 'ワ', label: '割爪', desc: '親指と人差指で隣り合う弦を割るように弾く（正派の散らし）', key: '' },
+  suri: { short: '摺', label: 'スリ爪', desc: '人差指と中指の爪裏で弦を擦る（風情の効果音）', key: '' },
+  ren: { short: '連', label: '連引き', desc: '複数の弦を連続して滑らかに流し弾く（引連・裏連・ツレ）', key: '' },
+  chirashi: { short: '散', label: '散らし爪', desc: '爪先で素早く弦を擦りつける', key: '' },
+  awase: { short: '合', label: '合わせ爪', desc: '親指と中指で2本の絃を同時に挟み弾く', key: '' },
+  haya: { short: 'ハ', label: '早爪', desc: '親指を連続して素早く打弦する（山田流等）', key: '' },
+  muko: { short: '向', label: '向う弾き', desc: '山田流丸爪で絃を前方へ押し出すように弾く', key: '' }
 };
+
+export const TEMPO_MIN = 30;
+export const TEMPO_MAX = 260;
 
 export interface Slot {
   notes: number[]; // 0~12 or 0~16 index of string
@@ -343,6 +346,15 @@ export function createEmptyScore(stringCount: 13 | 17 = 13): KotoScore {
   };
 }
 
+/** 拍子（1小節の拍数）を変える。多い分は削り、足りない分は空の拍で埋める。 */
+export function setBeatsPerMeasure(draft: KotoScore, beats: 2 | 3 | 4): void {
+  draft.beatsPerMeasure = beats;
+  draft.measures.forEach(m => {
+    m.beats = m.beats.slice(0, beats);
+    while (m.beats.length < beats) m.beats.push(createNewBeat(2));
+  });
+}
+
 export const pc = (m: number) => ((Math.round(m) % 12) + 12) % 12;
 
 export const noteName = (m: number, oct = true) =>
@@ -476,7 +488,7 @@ export function normalizeScore(raw: any, fallback?: KotoScore): KotoScore {
     title: typeof raw.title === 'string' ? raw.title : '無題',
     subtitle: typeof raw.subtitle === 'string' ? raw.subtitle : '',
     composer: typeof raw.composer === 'string' ? raw.composer : '',
-    tempo: typeof raw.tempo === 'number' && !isNaN(raw.tempo) && raw.tempo >= 20 ? clamp(raw.tempo, 20, 260) : 80,
+    tempo: typeof raw.tempo === 'number' && !isNaN(raw.tempo) ? clamp(Math.round(raw.tempo), TEMPO_MIN, TEMPO_MAX) : 80,
     beatsPerMeasure,
     stringCount,
     tuning: {

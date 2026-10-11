@@ -13,12 +13,62 @@ export interface BendConfig {
 
 export type StringTriggerCallback = (stringIndex: number) => void;
 
+/**
+ * 弾いたあとの左手の動きを、再生ピッチの変化（detune）として与える。
+ * 画面再生とWAV書き出しの両方から使う。
+ */
+export function applyBend(ctx: BaseAudioContext, src: AudioBufferSourceNode, t: number, bend: BendConfig): void {
+  const p = src.detune;
+  const d = clamp(bend.dur || 1.0, 0.25, 3.0);
+  const amt = 100 * (bend.amt || 1); // cents
+
+  if (bend.type === 'ato') {
+    // 後押し: pluck open note, then push upward
+    const t1 = t + clamp(d * 0.35, 0.1, 0.5);
+    p.setValueAtTime(0, t);
+    p.setValueAtTime(0, t1);
+    p.linearRampToValueAtTime(amt, t1 + 0.12);
+  } else if (bend.type === 'hanashi') {
+    // 押し放し: strike while pushed, then release string back down
+    const t1 = t + clamp(d * 0.4, 0.12, 0.6);
+    p.setValueAtTime(amt, t);
+    p.setValueAtTime(amt, t1);
+    p.linearRampToValueAtTime(0, t1 + 0.1);
+  } else if (bend.type === 'hikiiro') {
+    // 引き色: dip down slightly and recover
+    p.setValueAtTime(0, t);
+    p.setValueAtTime(0, t + 0.15);
+    p.linearRampToValueAtTime(-70, t + 0.32);
+    p.linearRampToValueAtTime(0, t + 0.55);
+  } else if (bend.type === 'tsuki') {
+    // 突き色: sharp quick push and return
+    p.setValueAtTime(0, t);
+    p.setValueAtTime(0, t + 0.09);
+    p.linearRampToValueAtTime(100, t + 0.14);
+    p.linearRampToValueAtTime(0, t + 0.24);
+  } else if (bend.type === 'yuri') {
+    // 揺り色: vibrato oscillation
+    const lfo = ctx.createOscillator();
+    const dep = ctx.createGain();
+    lfo.frequency.value = 5.2;
+    dep.gain.setValueAtTime(0, t);
+    dep.gain.setValueAtTime(0, t + 0.2);
+    dep.gain.linearRampToValueAtTime(28, t + 0.5);
+    lfo.connect(dep);
+    dep.connect(p);
+    lfo.start(t);
+    if (src.buffer) {
+      lfo.stop(t + src.buffer.duration);
+    }
+  }
+}
+
 class KotoSynthesizer {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private inputGain: GainNode | null = null;
   private bufferCache = new Map<string, AudioBuffer>();
-  private activeVoices: (({ src: AudioBufferSourceNode; gain: GainNode } | null))[] = new Array(13).fill(null);
+  private activeVoices: (({ src: AudioBufferSourceNode; gain: GainNode } | null))[] = new Array(17).fill(null);
   private volume: number = 0.8;
   private stringListeners: Set<StringTriggerCallback> = new Set();
 
@@ -71,6 +121,11 @@ class KotoSynthesizer {
     }
 
     return this.ctx;
+  }
+
+  /** 音を出すタイミングの基準になる現在時刻（秒） */
+  public now(): number {
+    return this.ensureContext().currentTime;
   }
 
   public getContext(): AudioContext | null {
@@ -209,60 +264,14 @@ class KotoSynthesizer {
     return this.bufferCache.get(key)!;
   }
 
-  private applyBend(src: AudioBufferSourceNode, t: number, bend: BendConfig): void {
-    const p = src.detune;
-    const d = clamp(bend.dur || 1.0, 0.25, 3.0);
-    const amt = 100 * (bend.amt || 1); // cents
-
-    if (bend.type === 'ato') {
-      // 後押し: pluck open note, then push upward
-      const t1 = t + clamp(d * 0.35, 0.1, 0.5);
-      p.setValueAtTime(0, t);
-      p.setValueAtTime(0, t1);
-      p.linearRampToValueAtTime(amt, t1 + 0.12);
-    } else if (bend.type === 'hanashi') {
-      // 押し放し: strike while pushed, then release string back down
-      const t1 = t + clamp(d * 0.4, 0.12, 0.6);
-      p.setValueAtTime(amt, t);
-      p.setValueAtTime(amt, t1);
-      p.linearRampToValueAtTime(0, t1 + 0.1);
-    } else if (bend.type === 'hikiiro') {
-      // 引き色: dip down slightly and recover
-      p.setValueAtTime(0, t);
-      p.setValueAtTime(0, t + 0.15);
-      p.linearRampToValueAtTime(-70, t + 0.32);
-      p.linearRampToValueAtTime(0, t + 0.55);
-    } else if (bend.type === 'tsuki') {
-      // 突き色: sharp quick push and return
-      p.setValueAtTime(0, t);
-      p.setValueAtTime(0, t + 0.09);
-      p.linearRampToValueAtTime(100, t + 0.14);
-      p.linearRampToValueAtTime(0, t + 0.24);
-    } else if (bend.type === 'yuri') {
-      // 揺り色: vibrato oscillation
-      if (!this.ctx) return;
-      const lfo = this.ctx.createOscillator();
-      const dep = this.ctx.createGain();
-      lfo.frequency.value = 5.2;
-      dep.gain.setValueAtTime(0, t);
-      dep.gain.setValueAtTime(0, t + 0.2);
-      dep.gain.linearRampToValueAtTime(28, t + 0.5);
-      lfo.connect(dep);
-      dep.connect(p);
-      lfo.start(t);
-      if (src.buffer) {
-        lfo.stop(t + src.buffer.duration);
-      }
-    }
-  }
-
   public pluck(
     strIndex: number,
     midi: number,
     time: number = 0,
     vel: number = 0.8,
     bright: number = 0.85,
-    bend: BendConfig | null = null
+    bend: BendConfig | null = null,
+    pan: number | null = null
   ) {
     const ctx = this.ensureContext();
     const t = Math.max(time, ctx.currentTime);
@@ -280,19 +289,19 @@ class KotoSynthesizer {
     src.buffer = this.getBuffer(midi, bright);
 
     if (bend && src.detune) {
-      this.applyBend(src, t, bend);
+      applyBend(ctx, src, t, bend);
     }
 
     const g = ctx.createGain();
     g.gain.value = vel;
 
-    // Stereo panning across the 13 strings (low strings slightly to the left, high strings to the right)
+    // Stereo panning across the strings (low strings slightly to the left, high strings to the right)
     if (ctx.createStereoPanner) {
-      const pan = ctx.createStereoPanner();
-      pan.pan.value = ((strIndex - 6) / 6) * 0.32;
+      const panner = ctx.createStereoPanner();
+      panner.pan.value = (pan ?? (strIndex - 6) / 6) * 0.32;
       src.connect(g);
-      g.connect(pan);
-      if (this.inputGain) pan.connect(this.inputGain);
+      g.connect(panner);
+      if (this.inputGain) panner.connect(this.inputGain);
     } else {
       src.connect(g);
       if (this.inputGain) g.connect(this.inputGain);
@@ -320,12 +329,22 @@ class KotoSynthesizer {
     }
   }
 
-  public dampAll(t: number = 0) {
+  /** 指定した絃の響きを止める（消音・休符用） */
+  public damp(strIndex: number, t: number = 0, tc: number = 0.04) {
+    if (!this.ctx) return;
+    const v = this.activeVoices[strIndex];
+    if (v) {
+      this.dampVoice(v, Math.max(t, this.ctx.currentTime), tc);
+      this.activeVoices[strIndex] = null;
+    }
+  }
+
+  public dampAll(t: number = 0, tc: number = 0.05) {
     if (!this.ctx) return;
     const now = Math.max(t, this.ctx.currentTime);
     this.activeVoices.forEach((v, i) => {
       if (v) {
-        this.dampVoice(v, now, 0.05);
+        this.dampVoice(v, now, tc);
         this.activeVoices[i] = null;
       }
     });
