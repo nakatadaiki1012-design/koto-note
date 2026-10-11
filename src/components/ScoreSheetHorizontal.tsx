@@ -8,6 +8,7 @@ import {
   KotoScore,
   CursorPosition,
   KANJI_STRINGS,
+  getStringNames,
   LEFT_HAND_ORNS,
   RIGHT_HAND_ORNS,
   ORN_MARKS,
@@ -62,6 +63,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
   autoScroll = true
 }) => {
   const pitches = getPitches(score);
+  const stringNames = getStringNames(score.stringCount === 17 ? 17 : 13);
   const perLine = score.view.perLine || 4;
   const isArabic = score.view.numerals === 'arabic';
   const isRubyOn = score.view.ruby !== 'off';
@@ -142,6 +144,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
     <div
       onMouseUp={onSlotMouseUp}
       data-font={score.view.fontStyle || 'shippori'}
+      data-layout="horizontal"
       style={{ zoom: score.view.zoom }}
       className={`relative flex flex-col gap-6 select-none ${fontClass} text-stone-900 transition-all w-full max-w-5xl mx-auto pb-6`}
     >
@@ -269,7 +272,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
         {score.view.chart === 'on' && (
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-sans border border-stone-300 rounded bg-stone-50/80 px-3 py-1.5 shadow-xs">
             <span className="font-bold text-stone-700">調弦:</span>
-            {KANJI_STRINGS.map((k, i) => (
+            {stringNames.map((k, i) => (
               <span key={i} className="inline-flex items-center gap-1">
                 <span className="font-score font-semibold text-stone-900">{k}</span>
                 <span className="text-stone-500">{noteName(pitches[i], false)}</span>
@@ -282,7 +285,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
       {/* Rows of Measures */}
       <div className="flex flex-col gap-4">
         {rows.map((row, rowIdx) => (
-          <div key={rowIdx} className="flex items-stretch">
+          <div key={rowIdx} className="score-row flex items-stretch">
             {/* Row Number */}
             <div className="w-8 shrink-0 flex items-center font-sans text-xs text-stone-400 font-semibold tabular-nums">
               {row.measures[0] + 1}
@@ -442,7 +445,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                     : ''
                                 } ${currentPlayKey === `${mIdx}-${bIdx}-0` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                               >
-                                {renderSlotContentH(beat.slots[0], isArabic, isRubyOn, renderRuby, false)}
+                                {renderSlotContentH(beat.slots[0], isArabic, isRubyOn, renderRuby, false, stringNames)}
                               </div>
 
                               {/* 裏拍 (16分音符×2: 幅50%を2分割) */}
@@ -465,7 +468,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                           : ''
                                       } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                     >
-                                      {renderSlotContentH(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true)}
+                                      {renderSlotContentH(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, stringNames)}
                                     </div>
                                   );
                                 })}
@@ -494,7 +497,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                           : ''
                                       } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                     >
-                                      {renderSlotContentH(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true)}
+                                      {renderSlotContentH(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, stringNames)}
                                     </div>
                                   );
                                 })}
@@ -514,7 +517,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                     : ''
                                 } ${currentPlayKey === `${mIdx}-${bIdx}-2` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                               >
-                                {renderSlotContentH(beat.slots[2], isArabic, isRubyOn, renderRuby, false)}
+                                {renderSlotContentH(beat.slots[2], isArabic, isRubyOn, renderRuby, false, stringNames)}
                               </div>
                             </div>
                           ) : div === 1 ? (
@@ -532,7 +535,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                   : ''
                               } ${currentPlayKey === `${mIdx}-${bIdx}-0` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                             >
-                              {renderSlotContentH(beat.slots[0], isArabic, isRubyOn, renderRuby)}
+                              {renderSlotContentH(beat.slots[0], isArabic, isRubyOn, renderRuby, undefined, stringNames)}
                             </div>
                           ) : div === 2 ? (
                             /* 8th notes (♪♪) two horizontal cells */
@@ -555,7 +558,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                         : ''
                                     } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                   >
-                                    {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby)}
+                                    {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby, undefined, stringNames)}
                                   </div>
                                 );
                               })}
@@ -584,7 +587,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                         : ''
                                     } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                   >
-                                    {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby, true)}
+                                    {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby, true, stringNames)}
                                   </div>
                                 );
                               })}
@@ -610,7 +613,7 @@ export const ScoreSheetHorizontal: React.FC<ScoreSheetHorizontalProps> = ({
                                         : ''
                                     } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                   >
-                                    {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby, true)}
+                                    {renderSlotContentH(sl, isArabic, isRubyOn, renderRuby, true, stringNames)}
                                   </div>
                                 );
                               })}
@@ -667,7 +670,8 @@ function renderSlotContentH(
   isArabic: boolean,
   isRubyOn: boolean,
   renderRuby: (notes: number[], oshi?: number, ato?: boolean) => React.ReactNode,
-  small: boolean = false
+  small: boolean = false,
+  stringNames: readonly string[] = KANJI_STRINGS
 ) {
   if (!sl) return null;
 
@@ -818,7 +822,7 @@ function renderSlotContentH(
           )}
 
           {sl.notes.map((n: number, idx: number) => {
-            const char = isArabic ? String(n + 1) : KANJI_STRINGS[n];
+            const char = isArabic ? String(n + 1) : stringNames[n] ?? String(n + 1);
             return (
               <span
                 key={idx}

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useModal } from '../hooks/useModal';
 import React from 'react';
 import { HelpCircle, Keyboard, Music2, Info } from 'lucide-react';
 
@@ -12,10 +13,12 @@ interface HelpModalProps {
 }
 
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
+  useModal(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-xs">
+    <div role="dialog" aria-modal="true" aria-label="ヘルプ" className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-xs">
       <div className="w-full max-w-3xl rounded-2xl bg-stone-50 border border-stone-300 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between border-b border-stone-200 pb-3">
           <div className="flex items-center gap-2">
@@ -123,6 +126,11 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <td className="py-1.5 pl-4 font-sans text-stone-500">ホームポジションで素早く入力</td>
                   </tr>
                   <tr>
+                    <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">十七絃の14〜17本目</td>
+                    <td className="py-1.5"><kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Alt</kbd> + <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">1</kbd>〜<kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">4</kbd></td>
+                    <td className="py-1.5 pl-4 font-sans text-stone-500">十七絃の楽譜のときだけ。1〜13本目は通常のキーと同じ</td>
+                  </tr>
+                  <tr>
                     <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">音の長さ</td>
                     <td className="py-1.5"><kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Q</kbd> 4分 / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">W</kbd> 8分 / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">E</kbd> 3連 / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">R</kbd> 16分</td>
                     <td className="py-1.5 pl-4 font-sans text-stone-500">次の音符にも長さが引き継がれます</td>
@@ -163,9 +171,19 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <td className="py-1.5 pl-4 font-sans text-stone-500"><kbd className="bg-stone-100 border px-1 py-0.5 rounded text-[10px]">Shift+Space</kbd>でカーソル位置から再生</td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">複数小節の選択</td>
-                    <td className="py-1.5"><kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Shift</kbd> + 小節クリック</td>
-                    <td className="py-1.5 pl-4 font-sans text-stone-500">範囲コピー、貼り付け、削除、ループ再生</td>
+                    <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">消す</td>
+                    <td className="py-1.5"><kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Delete</kbd> / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Backspace</kbd></td>
+                    <td className="py-1.5 pl-4 font-sans text-stone-500">Delete はそのマス（選択中は選択範囲）を消す。Backspace は空のマスなら1つ戻ってから消す</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">カーソル移動</td>
+                    <td className="py-1.5">矢印 / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Enter</kbd> / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Home</kbd>・<kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">End</kbd></td>
+                    <td className="py-1.5 pl-4 font-sans text-stone-500">縦書きは↑↓で1マスずつ、←→で段（列）を移動。Enter で次の小節の頭へ</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">保存 / 印刷 / 新規</td>
+                    <td className="py-1.5"><kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Ctrl</kbd>+<kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">S</kbd> / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Ctrl</kbd>+<kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">P</kbd> / <kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">Ctrl</kbd>+<kbd className="bg-stone-100 border px-1.5 py-0.5 rounded text-[11px]">N</kbd></td>
+                    <td className="py-1.5 pl-4 font-sans text-stone-500">保存画面、印刷、新しい楽譜の作成（ポップアップは Esc で閉じます）</td>
                   </tr>
                   <tr>
                     <td className="py-1.5 pr-4 font-sans font-medium text-stone-800">複数セルの選択（Excel感覚）</td>

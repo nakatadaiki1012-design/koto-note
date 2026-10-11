@@ -46,8 +46,8 @@
 }
 
 @page {
-  size: auto;
-  margin: 0mm; /* Removes default browser header (URL/title) and footer (date/page number) */
+  size: A4 portrait;
+  margin: 10mm;
 }
 
 @media print {
@@ -86,17 +86,29 @@
     background: #ffffff !important;
     max-height: none !important;
     overflow: visible !important;
-    padding: 12mm 15mm !important;
-    margin: 0 auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
     width: 100% !important;
+    display: block !important;
+  }
+
+  /* 譜面：画面では横一列に並べているが、印刷では用紙の幅で折り返して複数ページにする */
+  main [data-font] {
+    zoom: 1 !important;
+  }
+  main [data-layout="vertical"] {
     display: flex !important;
-    justify-content: center !important;
+    flex-wrap: wrap !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    row-gap: 6mm;
   }
 
   /* Prevent measure blocks and columns from breaking awkwardly */
-  .score-column {
+  .score-column,
+  .score-row {
     page-break-inside: avoid;
     break-inside: avoid;
   }
 }
-

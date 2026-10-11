@@ -65,6 +65,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const pitches = getPitches(score);
+  const stringNames = getStringNames(score.stringCount === 17 ? 17 : 13);
   const perLine = score.view.perLine || 4;
   const isArabic = score.view.numerals === 'arabic';
   const isRubyOn = score.view.ruby !== 'off';
@@ -154,6 +155,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
       ref={containerRef}
       onMouseUp={onSlotMouseUp}
       data-font={score.view.fontStyle || 'shippori'}
+      data-layout="vertical"
       style={{ zoom: score.view.zoom }}
       className={`relative inline-flex flex-row-reverse flex-nowrap items-start gap-x-0 select-none ${fontClass} text-stone-900 transition-all min-w-max pb-4 ${
         isRubyOn ? 'ruby-active' : ''
@@ -298,7 +300,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
               {getTuningLabel(score)}
             </div>
             <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 tabular-nums text-[10px] text-stone-600">
-              {KANJI_STRINGS.map((k, i) => (
+              {stringNames.map((k, i) => (
                 <div key={i} className="flex justify-between">
                   <span className="font-score font-semibold text-stone-900">{k}</span>
                   <span>{noteName(pitches[i], false)}</span>
@@ -311,7 +313,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
 
       {/* Measure Columns - Continuous Horizontal Flow (Never wrapped awkwardly) */}
       {columns.map((col, colIdx) => (
-        <div key={colIdx} className="flex flex-col shrink-0">
+        <div key={colIdx} className="score-column flex flex-col shrink-0">
           {/* Column Header showing Measure Range */}
           <div className="h-5 px-1 font-sans text-[11px] text-stone-500 tabular-nums font-semibold flex items-center justify-between border-b border-stone-300">
             <span>{col.measures[0] + 1}〜{col.measures[col.measures.length - 1] + 1}</span>
@@ -476,7 +478,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                     : ''
                                 } ${currentPlayKey === `${mIdx}-${bIdx}-0` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                               >
-                                {renderSlotContent(beat.slots[0], isArabic, isRubyOn, renderRuby, false, false)}
+                                {renderSlotContent(beat.slots[0], isArabic, isRubyOn, renderRuby, false, false, stringNames)}
                               </div>
 
                               {/* 裏拍: 16分音符マス×2（下半分 50% を縦2分割） */}
@@ -499,7 +501,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                           : ''
                                       } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                     >
-                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, true)}
+                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, true, stringNames)}
                                     </div>
                                   );
                                 })}
@@ -528,7 +530,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                           : ''
                                       } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                     >
-                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, true)}
+                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, true, stringNames)}
                                     </div>
                                   );
                                 })}
@@ -548,7 +550,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                     : ''
                                 } ${currentPlayKey === `${mIdx}-${bIdx}-2` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                               >
-                                {renderSlotContent(beat.slots[2], isArabic, isRubyOn, renderRuby, false, false)}
+                                {renderSlotContent(beat.slots[2], isArabic, isRubyOn, renderRuby, false, false, stringNames)}
                               </div>
                             </div>
                           ) : div === 1 ? (
@@ -566,7 +568,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                   : ''
                               } ${currentPlayKey === `${mIdx}-${bIdx}-0` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                             >
-                              {renderSlotContent(beat.slots[0], isArabic, isRubyOn, renderRuby)}
+                              {renderSlotContent(beat.slots[0], isArabic, isRubyOn, renderRuby, undefined, undefined, stringNames)}
                             </div>
                           ) : div === 2 ? (
                             /* 8th notes (♪♪): Two equal halves with subtle dividing line */
@@ -589,7 +591,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                         : ''
                                     } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                   >
-                                    {renderSlotContent(sl, isArabic, isRubyOn, renderRuby)}
+                                    {renderSlotContent(sl, isArabic, isRubyOn, renderRuby, undefined, undefined, stringNames)}
                                   </div>
                                 );
                               })}
@@ -618,7 +620,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                         : ''
                                     } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                   >
-                                    {renderSlotContent(sl, isArabic, isRubyOn, renderRuby, true)}
+                                    {renderSlotContent(sl, isArabic, isRubyOn, renderRuby, true, undefined, stringNames)}
                                   </div>
                                 );
                               })}
@@ -645,7 +647,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                           : ''
                                       } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                     >
-                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true)}
+                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, undefined, stringNames)}
                                     </div>
                                   );
                                 })}
@@ -669,7 +671,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                           : ''
                                       } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                     >
-                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true)}
+                                      {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, undefined, stringNames)}
                                     </div>
                                   );
                                 })}
@@ -696,7 +698,7 @@ export const ScoreSheetVertical: React.FC<ScoreSheetVerticalProps> = ({
                                         : ''
                                     } ${currentPlayKey === `${mIdx}-${bIdx}-${sIdx}` ? 'bg-amber-300/80 ring-2 ring-amber-500' : 'hover:bg-amber-50/50'}`}
                                   >
-                                    {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, true)}
+                                    {renderSlotContent(beat.slots[sIdx], isArabic, isRubyOn, renderRuby, true, true, stringNames)}
                                   </div>
                                 );
                               })}
@@ -772,7 +774,8 @@ function renderSlotContent(
   isRubyOn: boolean,
   renderRuby: (notes: number[], oshi?: number, ato?: boolean) => React.ReactNode,
   small: boolean = false,
-  extraCompact: boolean = false
+  extraCompact: boolean = false,
+  stringNames: readonly string[] = KANJI_STRINGS
 ) {
   if (!sl) return null;
 
@@ -972,7 +975,7 @@ function renderSlotContent(
           )}
 
           {sl.notes.map((n: number, idx: number) => {
-            const char = isArabic ? String(n + 1) : KANJI_STRINGS[n];
+            const char = isArabic ? String(n + 1) : stringNames[n] ?? String(n + 1);
             return (
               <span
                 key={idx}

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { KotoScore, getTuningLabel } from '../types/koto';
+import React, { useState, useEffect } from 'react';
+import { KotoScore, getTuningLabel, TEMPO_MIN, TEMPO_MAX } from '../types/koto';
 import {
   Music,
   Sliders,
@@ -49,6 +49,11 @@ export const Header: React.FC<HeaderProps> = ({
   onPrint
 }) => {
   const [showOptions, setShowOptions] = useState(false);
+  const [tempoText, setTempoText] = useState(String(score.tempo));
+  // 他の場所（演奏モード・元に戻すなど）でテンポが変わったら入力欄にも反映する
+  useEffect(() => {
+    setTempoText(String(score.tempo));
+  }, [score.tempo]);
   const view = score.view;
 
   const handleZoom = (delta: number) => {
@@ -59,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="flex flex-col gap-1.5 rounded-xl border border-stone-200/90 bg-white/95 px-2.5 sm:px-3 py-1 sm:py-1.5 shadow-2xs backdrop-blur-md no-print transition-all">
       {/* Top row: Brand & Primary Modals */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <div className="flex items-center gap-1.5" title="琴譜エディタ (Koto Note)">
           <div className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-800 to-amber-950 text-white shadow-xs">
             <span className="font-score font-extrabold text-xs sm:text-sm">琴</span>
@@ -80,15 +85,16 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Modal & Options Buttons */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           {onOpenNewScoreWizard && (
             <button
               onClick={onOpenNewScoreWizard}
               className="flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50/90 hover:bg-emerald-100 text-emerald-950 px-2 py-0.5 sm:py-1 text-xs font-bold shadow-2xs cursor-pointer shrink-0 whitespace-nowrap transition-colors"
               title="空白の楽譜を新しく作成する (Ctrl+N)"
+              aria-label="空白の楽譜を新しく作成する (Ctrl+N)"
             >
               <FilePlus className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-700 shrink-0" />
-              <span>新規楽譜</span>
+              <span className="hidden sm:inline">新規楽譜</span>
             </button>
           )}
 
@@ -96,6 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenLibrary}
             className="flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 sm:py-1 text-xs font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer shrink-0 whitespace-nowrap"
             title="楽曲ライブラリ"
+              aria-label="楽曲ライブラリ"
           >
             <FolderOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-700 shrink-0" />
             <span className="hidden sm:inline">楽曲集</span>
@@ -105,6 +112,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenTuning}
             className="flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50/80 px-2 py-0.5 sm:py-1 text-xs font-semibold text-amber-950 hover:bg-amber-100 cursor-pointer shrink-0 whitespace-nowrap"
             title="調弦設定"
+              aria-label="調弦設定"
           >
             <Sliders className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-700 shrink-0" />
             <span className="hidden sm:inline">調弦</span>
@@ -135,9 +143,10 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onPrint}
               className="flex items-center gap-1 rounded-md border border-stone-300 bg-white px-2 py-0.5 sm:py-1 text-xs font-bold text-stone-800 shadow-2xs hover:bg-stone-100 cursor-pointer shrink-0 whitespace-nowrap"
               title="印刷画面・PDF保存プレビューを開く (Ctrl+P)"
+              aria-label="印刷画面・PDF保存プレビューを開く (Ctrl+P)"
             >
               <Printer className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-stone-700 shrink-0" />
-              <span>印刷</span>
+              <span className="hidden sm:inline">印刷</span>
             </button>
           )}
 
@@ -150,6 +159,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
             }`}
             title="表示設定・詳細切り替え"
+              aria-label="表示設定・詳細切り替え"
           >
             <Settings2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
             <span className="hidden md:inline">設定</span>
@@ -160,6 +170,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenHelp}
             className="flex items-center justify-center rounded-md border border-stone-200 bg-white p-1 text-stone-600 hover:bg-stone-100 cursor-pointer shrink-0"
             title="ヘルプ"
+              aria-label="ヘルプ"
           >
             <HelpCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
           </button>
@@ -175,10 +186,18 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-[11px] font-semibold text-stone-400">テンポ:</span>
               <input
                 type="number"
-                min="30"
-                max="260"
-                value={score.tempo}
-                onChange={e => onUpdateScoreMeta({ tempo: Number(e.target.value) || 80 })}
+                inputMode="numeric"
+                min={TEMPO_MIN}
+                max={TEMPO_MAX}
+                value={tempoText}
+                onChange={e => {
+                  setTempoText(e.target.value);
+                  const n = Number(e.target.value);
+                  // 入力の途中（空・桁が足りない）では反映せず、範囲内の整数になったら反映する
+                  if (Number.isInteger(n) && n >= TEMPO_MIN && n <= TEMPO_MAX) onUpdateScoreMeta({ tempo: n });
+                }}
+                onBlur={() => setTempoText(String(score.tempo))}
+                aria-label="テンポ"
                 className="w-14 rounded-md border border-stone-300 bg-white px-1.5 py-1 text-center font-bold text-stone-900 focus:outline-indigo-500 text-xs"
               />
             </div>
@@ -291,6 +310,33 @@ export const Header: React.FC<HeaderProps> = ({
                   ))}
                 </select>
               </div>
+
+              {/* Paper orientation for printing */}
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-semibold text-stone-400">用紙:</span>
+                <select
+                  value={view.paper}
+                  onChange={e => onUpdateView({ paper: e.target.value as 'portrait' | 'landscape' })}
+                  className="rounded-md border border-stone-300 bg-white px-1.5 py-0.5 text-xs font-medium text-stone-700 cursor-pointer"
+                  title="印刷するときのA4の向き"
+                >
+                  <option value="portrait">A4 縦</option>
+                  <option value="landscape">A4 横</option>
+                </select>
+              </div>
+
+              {/* Tuning chart on the score */}
+              <button
+                onClick={() => onUpdateView({ chart: view.chart === 'on' ? 'off' : 'on' })}
+                className={`rounded-md border px-2 py-0.5 text-xs font-semibold cursor-pointer transition-colors ${
+                  view.chart === 'on'
+                    ? 'border-amber-400 bg-amber-50 text-amber-900'
+                    : 'border-stone-200 bg-white text-stone-500 hover:text-stone-800'
+                }`}
+                title="譜面に調弦表（一〜巾の音名）を載せる"
+              >
+                調弦表
+              </button>
 
               {/* Font selection */}
               <div className="flex items-center gap-1">

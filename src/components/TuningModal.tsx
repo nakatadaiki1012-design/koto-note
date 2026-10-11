@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useModal } from '../hooks/useModal';
 import React from 'react';
 import {
   KotoScore,
   TUNING_PRESETS,
-  KANJI_STRINGS,
+  getStringNames,
   RITSU_NAMES,
   getPitches,
   pc,
@@ -31,6 +32,8 @@ export const TuningModal: React.FC<TuningModalProps> = ({
   onClose,
   onUpdateTuning
 }) => {
+  useModal(isOpen, onClose);
+
   if (!isOpen) return null;
 
   const currentTuning = score.tuning;
@@ -88,7 +91,7 @@ export const TuningModal: React.FC<TuningModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-xs">
+    <div role="dialog" aria-modal="true" aria-label="調弦設定" className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-xs">
       <div className="w-full max-w-2xl rounded-2xl bg-stone-50 border border-stone-300 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between border-b border-stone-200 pb-3">
           <div>
@@ -183,11 +186,11 @@ export const TuningModal: React.FC<TuningModalProps> = ({
           {/* 13 Strings Table */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold text-stone-700">各弦の音高（十三絃一覧）</label>
+              <label className="text-xs font-bold text-stone-700">各弦の音高（{score.stringCount === 17 ? '十七' : '十三'}絃一覧）</label>
               <span className="text-[11px] text-stone-500">スピーカーを押すと音色を確認できます</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {KANJI_STRINGS.map((kanji, idx) => {
+              {getStringNames(score.stringCount === 17 ? 17 : 13).map((kanji, idx) => {
                 const midi = pitches[idx];
                 const hz = Math.round(midiToHz(midi));
                 return (

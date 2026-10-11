@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useModal } from '../hooks/useModal';
 import React, { useState } from 'react';
-import { KotoScore } from '../types/koto';
+import { KotoScore, normalizeScore } from '../types/koto';
 import { exportScoreToWav } from '../utils/wavExport';
 import { exportScoreToMidi } from '../utils/midiExport';
 import { Download, Upload, Music, Printer, FileText, CheckCircle2, Loader2 } from 'lucide-react';
@@ -26,7 +27,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [wavProgress, setWavProgress] = useState(0);
   const [copiedJson, setCopiedJson] = useState(false);
 
+  useModal(isOpen, onClose);
+
   if (!isOpen) return null;
+
+  // ファイル名に使えない文字（/ \\ : * ? " < > |）を _ に置き換える
+  const safeName = () => (score.title || '琴譜').replace(/[\\/:*?"<>|]/g, '_').trim() || '琴譜';
 
   const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob);
@@ -36,25 +42,30 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // すぐに解放すると、ダウンロードが始まる前にURLが無効になる環境があるため少し待つ
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
   };
 
   const handleExportJson = () => {
     const jsonStr = JSON.stringify(score, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
-    downloadBlob(blob, `${score.title || '琴譜'}.json`);
+    downloadBlob(blob, `${safeName()}.json`);
   };
 
   const handleCopyJson = () => {
     const jsonStr = JSON.stringify(score, null, 2);
-    navigator.clipboard.writeText(jsonStr);
-    setCopiedJson(true);
-    setTimeout(() => setCopiedJson(false), 2000);
+    navigator.clipboard
+      .writeText(jsonStr)
+      .then(() => {
+        setCopiedJson(true);
+        setTimeout(() => setCopiedJson(false), 2000);
+      })
+      .catch(() => alert('クリップボードにコピーできませんでした。「JSONファイルを保存」をお使いください'));
   };
 
   const handleExportMidi = () => {
     const midiBlob = exportScoreToMidi(score);
-    downloadBlob(midiBlob, `${score.title || '琴譜'}.mid`);
+    downloadBlob(midiBlob, `${safeName()}.mid`);
   };
 
   const handleExportWav = async () => {
@@ -62,7 +73,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       setIsRenderingWav(true);
       setWavProgress(10);
       const wavBlob = await exportScoreToWav(score, p => setWavProgress(p));
-      downloadBlob(wavBlob, `${score.title || '琴譜'}.wav`);
+      downloadBlob(wavBlob, `${safeName()}.wav`);
     } catch (err) {
       console.error('WAV export error:', err);
       alert('音声の書き出しに失敗しました');
@@ -81,13 +92,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         if (!parsed || !Array.isArray(parsed.measures)) {
           throw new Error('琴譜のデータ形式ではありません');
         }
-        onImportScore(parsed);
+        // 読み込んだデータを検査して、足りない項目を補う（壊れたデータでアプリが止まらないように）
+        onImportScore(normalizeScore(parsed));
         onClose();
       } catch (err: any) {
-        alert('ファイルの読み込みに失敗しました: ' + (err.message || ''));
+        alert('ファイルの読み込みに失敗しました: ' + (err instanceof SyntaxError ? 'JSONの形式が正しくありません' : err.message || ''));
       }
     };
     reader.readAsText(file);
+    // 同じファイルをもう一度選んでも読み込めるように
+    e.target.value = '';
   };
 
   const handlePrint = () => {
@@ -103,7 +117,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-xs">
+    <div role="dialog" aria-modal="true" aria-label="保存・書き出し・印刷" className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-xs">
       <div className="w-full max-w-xl rounded-2xl bg-stone-50 border border-stone-300 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between border-b border-stone-200 pb-3">
           <div>

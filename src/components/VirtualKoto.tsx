@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { KotoScore, KANJI_STRINGS, KEYBOARD_ROW1, KEYBOARD_HOME, getPitches, noteName, midiToHz } from '../types/koto';
+import { KotoScore, getStringNames, KEYBOARD_ROW1, KEYBOARD_HOME, getPitches, noteName, midiToHz } from '../types/koto';
 import { kotoSynth } from '../audio/kotoSynth';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -58,7 +58,7 @@ export const VirtualKoto: React.FC<VirtualKotoProps> = ({
       <div className="flex items-center justify-between text-xs text-amber-200/90 pb-1.5">
         <div className="flex items-center gap-2">
           <span className="inline-block h-2 w-2 rounded-full bg-amber-400"></span>
-          <span className="font-bold tracking-wide">十三絃 仮想琴台（奏台）</span>
+          <span className="font-bold tracking-wide">{score.stringCount === 17 ? '十七' : '十三'}絃 仮想琴台（奏台）</span>
           <span className="hidden sm:inline text-amber-300/60 text-[11px]">— 絃をクリックして試奏・入力</span>
         </div>
 
@@ -96,7 +96,7 @@ export const VirtualKoto: React.FC<VirtualKotoProps> = ({
           <div className="pointer-events-none absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
           {/* 13 Strings */}
-          {KANJI_STRINGS.map((kanji, idx) => {
+          {getStringNames(score.stringCount === 17 ? 17 : 13).map((kanji, idx) => {
             const midi = pitches[idx];
             const isVib = vibrating[idx] || activeStrings.includes(idx);
             const ratio = Math.max(0.15, Math.min(0.85, (midi - minMidi) / (maxMidi - minMidi)));
@@ -116,7 +116,7 @@ export const VirtualKoto: React.FC<VirtualKotoProps> = ({
                     {kanji}
                   </span>
                   <div className="flex flex-col text-[9px] leading-tight text-amber-200/90 font-mono">
-                    <span>{KEYBOARD_ROW1[idx]}</span>
+                    <span>{idx < KEYBOARD_ROW1.length ? KEYBOARD_ROW1[idx] : `Alt+${idx - KEYBOARD_ROW1.length + 1}`}</span>
                   </div>
                 </div>
 

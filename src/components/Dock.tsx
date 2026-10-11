@@ -6,7 +6,7 @@
 import React, { useState, useRef } from 'react';
 import {
   KotoScore,
-  KANJI_STRINGS,
+  getStringNames,
   KEYBOARD_ROW1,
   ORN_LABELS,
   LeftHandOrn,
@@ -133,6 +133,7 @@ export const Dock: React.FC<DockProps> = ({
   const [activeTab, setActiveTab] = useState<'strings' | 'ornaments' | 'measures'>('strings');
   const [isExpanded, setIsExpanded] = useState(true);
   const pitches = getPitches(score);
+  const stringNames = getStringNames(score.stringCount === 17 ? 17 : 13);
 
   // Tap tempo helper
   const tapTimes = useRef<number[]>([]);
@@ -346,67 +347,47 @@ export const Dock: React.FC<DockProps> = ({
           {/* TAB 1: 13-String Keypad (一〜巾) */}
           {activeTab === 'strings' && (
             <div className="flex flex-col gap-1">
-              {/* Mobile 2-Row Keypad (Thumb friendly, ergonomic height) */}
-              <div className="flex flex-col gap-1 sm:hidden">
-                {/* Row 1: 一〜七 (7 strings) */}
-                <div className="grid grid-cols-7 gap-1">
-                  {KANJI_STRINGS.slice(0, 7).map((kanji, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => onStringClick(idx)}
-                      className="flex flex-col items-center justify-center rounded-lg border border-stone-200/90 bg-white py-1 shadow-2xs hover:border-amber-500 hover:bg-amber-50 active:scale-95 transition-all cursor-pointer"
-                    >
-                      <span className="font-score font-bold text-sm text-stone-900 leading-none">
-                        {kanji}
-                      </span>
-                      <span className="font-mono text-[9px] text-stone-400 mt-0.5 font-semibold">
-                        {noteName(pitches[idx], false)}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Row 2: 八〜巾 (6 strings) + 和音モード */}
-                <div className="grid grid-cols-7 gap-1">
-                  {KANJI_STRINGS.slice(7).map((kanji, relIdx) => {
-                    const idx = 7 + relIdx;
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => onStringClick(idx)}
-                        className="flex flex-col items-center justify-center rounded-lg border border-stone-200/90 bg-white py-1 shadow-2xs hover:border-amber-500 hover:bg-amber-50 active:scale-95 transition-all cursor-pointer"
-                      >
-                        <span className="font-score font-bold text-sm text-stone-900 leading-none">
-                          {kanji}
-                        </span>
-                        <span className="font-mono text-[9px] text-stone-400 mt-0.5 font-semibold">
-                          {noteName(pitches[idx], false)}
-                        </span>
-                      </button>
-                    );
-                  })}
+              {/* Mobile Keypad: 7 per row (13 strings + 和音 = 2 rows, 17 strings + 和音 = 3 rows) */}
+              <div className="grid grid-cols-7 gap-1 sm:hidden">
+                {stringNames.map((kanji, idx) => (
                   <button
-                    onClick={onToggleChordMode}
-                    className={`flex flex-col items-center justify-center rounded-lg border py-1 text-[10px] font-bold transition-all cursor-pointer ${
-                      isChordMode
-                        ? 'bg-amber-400 text-stone-900 border-amber-500'
-                        : 'bg-stone-100 text-stone-600 border-stone-200'
-                    }`}
-                    title="和音（合わせ爪）入力モード"
+                    key={idx}
+                    onClick={() => onStringClick(idx)}
+                    className="flex flex-col items-center justify-center rounded-lg border border-stone-200/90 bg-white py-1 shadow-2xs hover:border-amber-500 hover:bg-amber-50 active:scale-95 transition-all cursor-pointer"
                   >
-                    <span>和音</span>
-                    <span className="text-[8px]">{isChordMode ? 'ON' : 'OFF'}</span>
+                    <span className="font-score font-bold text-sm text-stone-900 leading-none">
+                      {kanji}
+                    </span>
+                    <span className="font-mono text-[9px] text-stone-400 mt-0.5 font-semibold">
+                      {noteName(pitches[idx], false)}
+                    </span>
                   </button>
-                </div>
+                ))}
+                <button
+                  onClick={onToggleChordMode}
+                  className={`flex flex-col items-center justify-center rounded-lg border py-1 text-[10px] font-bold transition-all cursor-pointer ${
+                    isChordMode
+                      ? 'bg-amber-400 text-stone-900 border-amber-500'
+                      : 'bg-stone-100 text-stone-600 border-stone-200'
+                  }`}
+                  title="和音（合わせ爪）入力モード"
+                >
+                  <span>和音</span>
+                  <span className="text-[8px]">{isChordMode ? 'ON' : 'OFF'}</span>
+                </button>
               </div>
 
-              {/* Desktop Single Row Keypad (All 13 strings with Kanji, Pitch & Shortcut) */}
-              <div className="hidden sm:grid sm:grid-cols-13 gap-1">
-                {KANJI_STRINGS.map((kanji, idx) => (
+              {/* Desktop Single Row Keypad (All strings with Kanji, Pitch & Shortcut) */}
+              <div
+                className="hidden sm:grid gap-1"
+                style={{ gridTemplateColumns: `repeat(${stringNames.length}, minmax(0, 1fr))` }}
+              >
+                {stringNames.map((kanji, idx) => (
                   <button
                     key={idx}
                     onClick={() => onStringClick(idx)}
                     className="flex flex-col items-center justify-center rounded-lg border border-stone-200/90 bg-white py-1 shadow-2xs hover:border-amber-500 hover:bg-amber-50 active:scale-95 transition-all cursor-pointer group"
+                    aria-label={`${kanji} ${noteName(pitches[idx])}`}
                   >
                     <span className="font-score font-bold text-sm sm:text-base text-stone-900 group-hover:text-amber-900 leading-none">
                       {kanji}
@@ -415,7 +396,7 @@ export const Dock: React.FC<DockProps> = ({
                       {noteName(pitches[idx], false)}
                     </span>
                     <span className="font-mono text-[8px] text-stone-300 hidden md:inline">
-                      {KEYBOARD_ROW1[idx]}
+                      {idx < KEYBOARD_ROW1.length ? KEYBOARD_ROW1[idx] : `Alt+${idx - KEYBOARD_ROW1.length + 1}`}
                     </span>
                   </button>
                 ))}

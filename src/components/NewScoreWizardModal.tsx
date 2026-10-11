@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useModal } from '../hooks/useModal';
 import React, { useState } from 'react';
 import {
   KotoScore,
@@ -44,6 +45,8 @@ export const NewScoreWizardModal: React.FC<NewScoreWizardModalProps> = ({
   const [tempo, setTempo] = useState(72);
   const [layout, setLayout] = useState<'vertical' | 'horizontal'>('vertical');
   const [showAdvancedMeta, setShowAdvancedMeta] = useState(false);
+
+  useModal(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -118,7 +121,7 @@ export const NewScoreWizardModal: React.FC<NewScoreWizardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/65 p-3 sm:p-4 backdrop-blur-xs no-print animate-fade-in">
+    <div role="dialog" aria-modal="true" aria-label="新しい楽譜を作成" className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/65 p-3 sm:p-4 backdrop-blur-xs no-print animate-fade-in">
       <div className="w-full max-w-xl rounded-2xl bg-white border border-stone-300 shadow-2xl p-5 sm:p-6 overflow-y-auto max-h-[92vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">

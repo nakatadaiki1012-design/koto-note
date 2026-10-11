@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useModal } from '../hooks/useModal';
 import React, { useState, useEffect } from 'react';
 import { KotoScore, createEmptyScore } from '../types/koto';
 import { PRESET_SONGS, PresetSongInfo } from '../data/presetScores';
@@ -37,6 +38,8 @@ export const ScoreLibraryModal: React.FC<ScoreLibraryModalProps> = ({
       // ignore
     }
   }, [isOpen]);
+
+  useModal(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -87,7 +90,7 @@ export const ScoreLibraryModal: React.FC<ScoreLibraryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-xs">
+    <div role="dialog" aria-modal="true" aria-label="楽曲集" className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-xs">
       <div className="w-full max-w-2xl rounded-2xl bg-stone-50 border border-stone-300 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between border-b border-stone-200 pb-3">
           <div>
