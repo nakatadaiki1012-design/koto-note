@@ -1036,11 +1036,8 @@ export default function App() {
       });
 
       slotClipboardRef.current = copied;
-      try {
-        navigator.clipboard.writeText(textParts.join('\t'));
-      } catch {
-        // ignore
-      }
+      // 他のアプリ（表計算ソフトなど）へ貼れるようにテキストでもコピーする。許可されない環境では無視する
+      navigator.clipboard?.writeText(textParts.join('\t')).catch(() => {});
       showToast(`${copied.length}マスをコピーしました (Ctrl+C)`);
       return;
     }

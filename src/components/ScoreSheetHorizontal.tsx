@@ -790,7 +790,7 @@ function renderSlotContentH(
     <div className="relative flex items-center justify-center w-full h-full px-0.5 overflow-hidden">
       {/* Right-hand ornament (top right) */}
       {rh && (
-        <span className="absolute right-0.5 top-0.5 text-[9px] font-bold text-stone-900 leading-none font-score select-none">
+        <span className="absolute right-0.5 top-0.5 text-[11px] font-extrabold text-stone-900 leading-none font-score select-none">
           {rh}
         </span>
       )}

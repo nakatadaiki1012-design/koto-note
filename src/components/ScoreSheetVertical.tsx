@@ -938,8 +938,8 @@ function renderSlotContent(
       {rh && (
         <span
           className={`absolute right-0.5 top-0.5 ${
-            extraCompact ? 'text-[7px]' : 'text-[9px]'
-          } font-bold text-stone-900 leading-none font-score select-none`}
+            extraCompact ? 'text-[8px]' : 'text-[11px]'
+          } font-extrabold text-stone-900 leading-none font-score select-none`}
         >
           {rh}
         </span>
