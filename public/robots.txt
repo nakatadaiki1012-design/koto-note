@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://koto-simulator.axw-nkt-fno.workers.dev/sitemap.xml
