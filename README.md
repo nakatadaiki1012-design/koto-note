@@ -91,6 +91,13 @@ npm test           # 自動テスト（再生の時間表・奏法の展開・MI
 
 ---
 
+## 🔎 公開と検索エンジン
+
+- `index.html` に、検索結果に出るタイトル・説明文、SNS共有用の情報、Googleの所有権確認タグ（`google-site-verification`）、構造化データ（JSON-LD）を入れています。
+- JavaScript を読まない検索ロボット向けに、アプリが起動するまでの間に表示される本文（機能の説明）も入れています。
+- `public/robots.txt`（クロールの許可）と `public/og-image.png`（共有用の画像）は、ビルド時にそのまま公開されます。
+- 公開URLが決まったら、Search Console で「所有権の確認」を行い、`sitemap.xml` を登録してください。
+
 ## 📄 ライセンス
 
 Apache-2.0
