@@ -82,6 +82,10 @@ interface DockProps {
   onToggleKotoBoard?: () => void;
   currentFinger?: number;
   onSetFinger?: (finger: number | undefined) => void;
+  /** 奏法を付ける相手（いま入れた音、または選んでいる音のあるマス）。無ければ null */
+  ornTarget?: { label: string; orns: Record<string, boolean>; finger?: number } | null;
+  onToggleOrnTarget?: (ornKey: string) => void;
+  onSetFingerTarget?: (finger: number | undefined) => void;
 }
 
 export const Dock: React.FC<DockProps> = ({
@@ -101,6 +105,9 @@ export const Dock: React.FC<DockProps> = ({
   metronome,
   currentFinger,
   onSetFinger,
+  ornTarget,
+  onToggleOrnTarget,
+  onSetFingerTarget,
   onPlayToggle,
   onStop,
   onRewind,
@@ -130,7 +137,8 @@ export const Dock: React.FC<DockProps> = ({
   onToggleKotoBoard
 }) => {
   // Mobile / compact panel state
-  const [activeTab, setActiveTab] = useState<'strings' | 'ornaments' | 'measures'>('strings');
+  const [activeTab, setActiveTab] = useState<'strings' | 'measures'>('strings');
+  const [showAllOrns, setShowAllOrns] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const pitches = getPitches(score);
   const stringNames = getStringNames(score.stringCount === 17 ? 17 : 13);
@@ -166,6 +174,101 @@ export const Dock: React.FC<DockProps> = ({
       setTapBadge('もう一度');
     }
   };
+
+  // 奏法の一覧（左手・右手・指番号）。「…ほか」を押したときに出す
+  const renderOrnPanel = (
+    panelOrns: Record<string, boolean>,
+    panelToggle: (key: string) => void,
+    panelFinger: number | undefined,
+    panelSetFinger: (finger: number | undefined) => void
+  ) => (
+            <div className="flex flex-col gap-1.5">
+              {/* Left hand techniques */}
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="text-xs font-bold text-red-800 mr-1 shrink-0">左手（朱記号）:</span>
+                {['oshi1', 'oshi2', 'ato', 'hanashi', 'hikiiro', 'tsuki', 'yuri'].map(key => {
+                  const orn = ORN_LABELS[key];
+                  const isOn = panelOrns[key];
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => panelToggle(key)}
+                      className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold transition-all cursor-pointer ${
+                        isOn
+                          ? 'bg-red-700 text-white shadow-2xs'
+                          : 'border border-stone-300 bg-white text-stone-700 hover:border-red-400'
+                      }`}
+                      title={`${orn.desc} (キー: ${orn.key})`}
+                    >
+                      <b className={isOn ? 'text-white' : 'text-red-700 font-bold'}>{orn.short}</b>
+                      <span>{orn.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Right hand techniques */}
+              <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-stone-200">
+                <span className="text-xs font-bold text-stone-800 mr-1 shrink-0">右手（爪技法）:</span>
+                {['sukui', 'kaki', 'hiki', 'trem', 'nagashi'].map(key => {
+                  const orn = ORN_LABELS[key];
+                  const isOn = panelOrns[key];
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => panelToggle(key)}
+                      className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold transition-all cursor-pointer ${
+                        isOn
+                          ? 'bg-stone-900 text-white shadow-2xs'
+                          : 'border border-stone-300 bg-white text-stone-700 hover:border-stone-400'
+                      }`}
+                      title={`${orn.desc} (キー: ${orn.key})`}
+                    >
+                      <b className={isOn ? 'text-white' : 'text-stone-900 font-bold'}>{orn.short}</b>
+                      <span>{orn.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Finger designation (中指 3, 人差指 2, 親指 1) */}
+              {(
+                <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-stone-200">
+                  <span className="text-xs font-bold text-amber-900 mr-1 shrink-0">指番号（右手爪）:</span>
+                  {[
+                    { num: 3, label: '中指「３」', desc: '中指（爪）で弾く' },
+                    { num: 2, label: '人差指「２」', desc: '人差し指で弾く' },
+                    { num: 1, label: '親指「１」', desc: '親指で弾く' }
+                  ].map(f => {
+                    const isSelected = panelFinger === f.num;
+                    return (
+                      <button
+                        key={f.num}
+                        onClick={() => panelSetFinger(isSelected ? undefined : f.num)}
+                        className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500 text-stone-950 shadow-2xs ring-1 ring-amber-600'
+                            : 'border border-amber-300 bg-amber-50/80 text-amber-950 hover:bg-amber-100'
+                        }`}
+                        title={f.desc}
+                      >
+                        <span className="font-sans font-extrabold">{f.num}</span>
+                        <span>{f.label}</span>
+                      </button>
+                    );
+                  })}
+                  {panelFinger && (
+                    <button
+                      onClick={() => panelSetFinger(undefined)}
+                      className="text-[10px] text-stone-400 hover:text-stone-700 underline px-1 cursor-pointer"
+                    >
+                      解除
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+  );
 
   return (
     <div className="w-full rounded-xl sm:rounded-2xl border border-stone-300/80 bg-stone-50/95 shadow-lg backdrop-blur-md no-print transition-all">
@@ -305,19 +408,6 @@ export const Dock: React.FC<DockProps> = ({
             </button>
             <button
               onClick={() => {
-                setActiveTab('ornaments');
-                setIsExpanded(true);
-              }}
-              className={`rounded px-1.5 sm:px-2 py-0.5 transition-colors cursor-pointer text-xs ${
-                activeTab === 'ornaments' && isExpanded
-                  ? 'bg-white text-stone-950 font-bold shadow-2xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              奏法
-            </button>
-            <button
-              onClick={() => {
                 setActiveTab('measures');
                 setIsExpanded(true);
               }}
@@ -347,6 +437,55 @@ export const Dock: React.FC<DockProps> = ({
           {/* TAB 1: 13-String Keypad (一〜巾) */}
           {activeTab === 'strings' && (
             <div className="flex flex-col gap-1">
+              {/* 奏法の行：音を入れた直後（または音のあるマスを選んだとき）だけ中身が出る。
+                  高さはいつも確保しておき、絃キーの位置がずれて押し間違えないようにする */}
+              <div className="min-h-[30px] flex flex-wrap items-center gap-1 rounded-lg border border-dashed border-stone-200 bg-stone-50/70 px-1.5 py-0.5">
+                {ornTarget ? (
+                  <>
+                    <span className="text-[11px] font-bold text-stone-500 shrink-0">
+                      「<span className="font-score text-stone-900">{ornTarget.label}</span>」に：
+                    </span>
+                    {['oshi1', 'oshi2', 'ato', 'sukui', 'yuri'].map(key => {
+                      const orn = ORN_LABELS[key];
+                      const isOn = ornTarget.orns[key];
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => onToggleOrnTarget?.(key)}
+                          className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold transition-all cursor-pointer ${
+                            isOn
+                              ? 'bg-red-700 text-white shadow-2xs'
+                              : 'border border-stone-300 bg-white text-stone-700 hover:border-red-400'
+                          }`}
+                          title={`${orn.desc}${orn.key ? ` (キー: ${orn.key})` : ''}`}
+                          aria-pressed={!!isOn}
+                        >
+                          <b className={isOn ? 'text-white' : 'text-red-700 font-bold'}>{orn.short}</b>
+                          <span className="hidden sm:inline">{orn.label}</span>
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setShowAllOrns(v => !v)}
+                      className={`rounded-md px-2 py-0.5 text-xs font-bold cursor-pointer border ${
+                        showAllOrns ? 'border-stone-800 bg-stone-800 text-white' : 'border-stone-300 bg-white text-stone-700 hover:border-stone-500'
+                      }`}
+                      title="ほかの奏法と指番号"
+                      aria-expanded={showAllOrns}
+                    >
+                      {showAllOrns ? '閉じる' : '…ほか'}
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-[11px] text-stone-400">音を入れると、ここにその音の奏法（押し手など）が出ます</span>
+                )}
+              </div>
+              {ornTarget && showAllOrns && (
+                <div className="rounded-lg border border-stone-200 bg-white p-1.5">
+                  {renderOrnPanel(ornTarget.orns, k => onToggleOrnTarget?.(k), ornTarget.finger, f => onSetFingerTarget?.(f))}
+                </div>
+              )}
+
               {/* Mobile Keypad: 7 per row (13 strings + 和音 = 2 rows, 17 strings + 和音 = 3 rows) */}
               <div className="grid grid-cols-7 gap-1 sm:hidden">
                 {stringNames.map((kanji, idx) => (
@@ -451,96 +590,6 @@ export const Dock: React.FC<DockProps> = ({
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* TAB 2: Ornaments (Left Hand 朱色 & Right Hand) */}
-          {activeTab === 'ornaments' && (
-            <div className="flex flex-col gap-1.5">
-              {/* Left hand techniques */}
-              <div className="flex flex-wrap items-center gap-1">
-                <span className="text-xs font-bold text-red-800 mr-1 shrink-0">左手（朱記号）:</span>
-                {['oshi1', 'oshi2', 'ato', 'hanashi', 'hikiiro', 'tsuki', 'yuri'].map(key => {
-                  const orn = ORN_LABELS[key];
-                  const isOn = selectedOrns[key];
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => onToggleOrn(key)}
-                      className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold transition-all cursor-pointer ${
-                        isOn
-                          ? 'bg-red-700 text-white shadow-2xs'
-                          : 'border border-stone-300 bg-white text-stone-700 hover:border-red-400'
-                      }`}
-                      title={`${orn.desc} (キー: ${orn.key})`}
-                    >
-                      <b className={isOn ? 'text-white' : 'text-red-700 font-bold'}>{orn.short}</b>
-                      <span>{orn.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Right hand techniques */}
-              <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-stone-200">
-                <span className="text-xs font-bold text-stone-800 mr-1 shrink-0">右手（爪技法）:</span>
-                {['sukui', 'kaki', 'hiki', 'trem', 'nagashi'].map(key => {
-                  const orn = ORN_LABELS[key];
-                  const isOn = selectedOrns[key];
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => onToggleOrn(key)}
-                      className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold transition-all cursor-pointer ${
-                        isOn
-                          ? 'bg-stone-900 text-white shadow-2xs'
-                          : 'border border-stone-300 bg-white text-stone-700 hover:border-stone-400'
-                      }`}
-                      title={`${orn.desc} (キー: ${orn.key})`}
-                    >
-                      <b className={isOn ? 'text-white' : 'text-stone-900 font-bold'}>{orn.short}</b>
-                      <span>{orn.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Finger designation (中指 3, 人差指 2, 親指 1) */}
-              {onSetFinger && (
-                <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-stone-200">
-                  <span className="text-xs font-bold text-amber-900 mr-1 shrink-0">指番号（右手爪）:</span>
-                  {[
-                    { num: 3, label: '中指「３」', desc: '中指（爪）で弾く' },
-                    { num: 2, label: '人差指「２」', desc: '人差し指で弾く' },
-                    { num: 1, label: '親指「１」', desc: '親指で弾く' }
-                  ].map(f => {
-                    const isSelected = currentFinger === f.num;
-                    return (
-                      <button
-                        key={f.num}
-                        onClick={() => onSetFinger(isSelected ? undefined : f.num)}
-                        className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-amber-500 text-stone-950 shadow-2xs ring-1 ring-amber-600'
-                            : 'border border-amber-300 bg-amber-50/80 text-amber-950 hover:bg-amber-100'
-                        }`}
-                        title={f.desc}
-                      >
-                        <span className="font-sans font-extrabold">{f.num}</span>
-                        <span>{f.label}</span>
-                      </button>
-                    );
-                  })}
-                  {currentFinger && (
-                    <button
-                      onClick={() => onSetFinger(undefined)}
-                      className="text-[10px] text-stone-400 hover:text-stone-700 underline px-1 cursor-pointer"
-                    >
-                      解除
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
           )}
 

@@ -796,8 +796,13 @@ export default function App() {
   }, [cursor, selectedSlotKeys, selectedRange, handleInputClear, mutateScore]);
 
   // Set finger (中指 3, 人差指 2, 親指 1)
-  const handleSetFinger = useCallback((fingerNum: number | undefined) => {
+  const handleSetFinger = useCallback((fingerNum: number | undefined, at?: { m: number; b: number; s: number }) => {
     mutateScore(draft => {
+      if (at) {
+        const slot = draft.measures[at.m]?.beats[at.b]?.slots[at.s];
+        if (slot) slot.finger = fingerNum;
+        return;
+      }
       if (selectedSlotKeys.size > 0) {
         selectedSlotKeys.forEach(k => {
           const [mStr, bStr, sStr] = k.split('-');
@@ -816,7 +821,7 @@ export default function App() {
   }, [cursor, lastEnteredSlot, selectedSlotKeys, mutateScore]);
 
   // Toggle Ornament
-  const handleToggleOrn = useCallback((ornKey: string) => {
+  const handleToggleOrn = useCallback((ornKey: string, at?: { m: number; b: number; s: number }) => {
     mutateScore(draft => {
       const applyOrn = (slot: any) => {
         if (ornKey === 'oshi1') {
@@ -830,6 +835,13 @@ export default function App() {
           slot[ornKey] = val;
         }
       };
+
+      // 奏法の行から押したときは、その行が示している音に付ける
+      if (at) {
+        const slot = draft.measures[at.m]?.beats[at.b]?.slots[at.s];
+        if (slot) applyOrn(slot);
+        return;
+      }
 
       if (selectedSlotKeys.size > 0) {
         selectedSlotKeys.forEach(k => {
@@ -1526,6 +1538,28 @@ export default function App() {
     ? score.measures[lastEnteredSlot.m]?.beats[lastEnteredSlot.b]?.slots[lastEnteredSlot.s]
     : curSlot;
 
+  // 奏法の行の相手：いま入れたばかりの音。無ければ、カーソルのある音の入ったマス
+  const ornTargetPos = (() => {
+    const has = (p: { m: number; b: number; s: number } | null) =>
+      !!p && !!score.measures[p.m]?.beats[p.b]?.slots[p.s]?.notes?.length;
+    if (has(lastEnteredSlot)) return lastEnteredSlot!;
+    const c = { m: cursor.m, b: cursor.b, s: cursor.s };
+    return has(c) ? c : null;
+  })();
+  const ornTargetSlot = ornTargetPos ? score.measures[ornTargetPos.m].beats[ornTargetPos.b].slots[ornTargetPos.s] : null;
+  const stringNamesNow = getStringNames(score.stringCount === 17 ? 17 : 13);
+  const ornTarget = ornTargetSlot
+    ? {
+        label: ornTargetSlot.notes.map(n => stringNamesNow[n]).join(''),
+        finger: ornTargetSlot.finger,
+        orns: (() => {
+          const o: Record<string, boolean> = { oshi1: ornTargetSlot.oshi === 1, oshi2: ornTargetSlot.oshi === 2 };
+          [...LEFT_HAND_ORNS, ...RIGHT_HAND_ORNS].forEach(k => (o[k] = !!ornTargetSlot[k]));
+          return o;
+        })()
+      }
+    : null;
+
   const currentOrns: Record<string, boolean> = {
     oshi1: targetSlot?.oshi === 1,
     oshi2: targetSlot?.oshi === 2
@@ -1641,6 +1675,14 @@ export default function App() {
             selectedOrns={currentOrns}
             currentFinger={targetSlot?.finger}
             onSetFinger={handleSetFinger}
+            ornTarget={ornTarget}
+            onToggleOrnTarget={key => {
+              if (!ornTargetPos) return;
+              handleToggleOrn(key, ornTargetPos);
+              // 付けた奏法をその場で試聴する
+              previewSlot(scoreRef.current.measures[ornTargetPos.m]?.beats[ornTargetPos.b]?.slots[ornTargetPos.s]);
+            }}
+            onSetFingerTarget={f => ornTargetPos && handleSetFinger(f, ornTargetPos)}
             canUndo={undoStackRef.current.length > 0}
             canRedo={redoStackRef.current.length > 0}
             loopActive={loopActive}
