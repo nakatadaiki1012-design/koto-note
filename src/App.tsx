@@ -1550,6 +1550,7 @@ export default function App() {
   const stringNamesNow = getStringNames(score.stringCount === 17 ? 17 : 13);
   const ornTarget = ornTargetSlot
     ? {
+        key: `${ornTargetPos!.m}-${ornTargetPos!.b}-${ornTargetPos!.s}`,
         label: ornTargetSlot.notes.map(n => stringNamesNow[n]).join(''),
         finger: ornTargetSlot.finger,
         orns: (() => {

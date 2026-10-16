@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   KotoScore,
   getStringNames,
@@ -83,7 +83,7 @@ interface DockProps {
   currentFinger?: number;
   onSetFinger?: (finger: number | undefined) => void;
   /** 奏法を付ける相手（いま入れた音、または選んでいる音のあるマス）。無ければ null */
-  ornTarget?: { label: string; orns: Record<string, boolean>; finger?: number } | null;
+  ornTarget?: { key: string; label: string; orns: Record<string, boolean>; finger?: number } | null;
   onToggleOrnTarget?: (ornKey: string) => void;
   onSetFingerTarget?: (finger: number | undefined) => void;
 }
@@ -139,6 +139,35 @@ export const Dock: React.FC<DockProps> = ({
   // Mobile / compact panel state
   const [activeTab, setActiveTab] = useState<'strings' | 'measures'>('strings');
   const [showAllOrns, setShowAllOrns] = useState(false);
+
+  // 次の音を入れて相手が変わったら「…ほか」を自動で閉じる（ずっと開いて絃キーが下がったままにならないように）
+  const targetKey = ornTarget?.key ?? null;
+  useEffect(() => {
+    setShowAllOrns(false);
+  }, [targetKey]);
+
+  // すぐ押せる奏法：押し手（オ・ヲ）＋この曲でよく使っている奏法3つ。
+  // まだ使っていなければ、スクイ・後押し・揺り色を出す
+  const quickOrnKeys = useMemo(() => {
+    const counts: Record<string, number> = {};
+    score.measures.forEach(m =>
+      m.beats.forEach(b =>
+        b.slots.forEach(sl => {
+          Object.keys(ORN_LABELS).forEach(k => {
+            if (k === 'oshi1' || k === 'oshi2') return;
+            if ((sl as any)[k]) counts[k] = (counts[k] || 0) + 1;
+          });
+        })
+      )
+    );
+    const used = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 3);
+    const list = ['oshi1', 'oshi2', ...used];
+    for (const d of ['sukui', 'ato', 'yuri']) {
+      if (list.length >= 5) break;
+      if (!list.includes(d)) list.push(d);
+    }
+    return list;
+  }, [score.measures]);
   const [isExpanded, setIsExpanded] = useState(true);
   const pitches = getPitches(score);
   const stringNames = getStringNames(score.stringCount === 17 ? 17 : 13);
@@ -445,7 +474,11 @@ export const Dock: React.FC<DockProps> = ({
                     <span className="text-[11px] font-bold text-stone-500 shrink-0">
                       「<span className="font-score text-stone-900">{ornTarget.label}</span>」に：
                     </span>
-                    {['oshi1', 'oshi2', 'ato', 'sukui', 'yuri'].map(key => {
+                    {[
+                      ...quickOrnKeys,
+                      // いま付いている奏法は、外せるように必ず表示する
+                      ...Object.keys(ornTarget.orns).filter(k => ornTarget.orns[k] && !quickOrnKeys.includes(k) && ORN_LABELS[k])
+                    ].map(key => {
                       const orn = ORN_LABELS[key];
                       const isOn = ornTarget.orns[key];
                       return (
